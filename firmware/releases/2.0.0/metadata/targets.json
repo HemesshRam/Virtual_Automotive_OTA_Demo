@@ -1,0 +1,75 @@
+{
+  "signed": {
+    "role": "targets",
+    "version": 4,
+    "expires": "2026-09-24T00:00:00Z",
+    "targets": {
+      "gateway_v2.bin": {
+        "length": 52428960,
+        "hashes": {
+          "sha256": "352be245d39cd6fb1185ca39234ba824f55d62e0f50e6a6b165d61e2ab7bcf0b"
+        },
+        "custom": {
+          "ecu_name": "Gateway ECU",
+          "hardware_variant": "GENERIC",
+          "target_version": "2.0.0",
+          "minimum_bootloader": "1.0.0",
+          "transport_support": [
+            "DOIP",
+            "VCAN"
+          ],
+          "flash_address": "0x08000000",
+          "part_number": "GWY-HW-A1",
+          "image_format": "RAW",
+          "payload_sha256": "94a42ba2f5c3cf62cc700045f9f3592f61df55a57c4b3578b7e553ada1acecc6"
+        }
+      },
+      "bcm_v2.bin": {
+        "length": 51904672,
+        "hashes": {
+          "sha256": "7b4dd9fba1d08be4d7488ef9286f4ac8bc9d5bbfadaf50c08487784525ff643d"
+        },
+        "custom": {
+          "ecu_name": "BCM ECU",
+          "hardware_variant": "GENERIC",
+          "target_version": "2.0.0",
+          "minimum_bootloader": "1.0.0",
+          "transport_support": [
+            "DOIP",
+            "VCAN"
+          ],
+          "flash_address": "0x08010000",
+          "part_number": "BCM-HW-A1",
+          "image_format": "RAW",
+          "payload_sha256": "b9d8d6b965b5cb9962f0f5b0814083f261ef9cee8b28f2d246c696b29c9f9bd0"
+        }
+      },
+      "cluster_v2.bin": {
+        "length": 52166816,
+        "hashes": {
+          "sha256": "b03677b0825a0b94a10d3386bbec3025c078c5f82175975e57a7e9dd4266e511"
+        },
+        "custom": {
+          "ecu_name": "Cluster ECU",
+          "hardware_variant": "GENERIC",
+          "target_version": "2.0.0",
+          "minimum_bootloader": "1.0.0",
+          "transport_support": [
+            "DOIP",
+            "VCAN"
+          ],
+          "flash_address": "0x08020000",
+          "part_number": "CLU-HW-A1",
+          "image_format": "RAW",
+          "payload_sha256": "a7431353f90bd7ec7f047eb13489de9843ca4092e6efcf3cd13041e45af26340"
+        }
+      }
+    }
+  },
+  "signatures": [
+    {
+      "keyid": "demo-root",
+      "sig": "cb818fa1a1caa880c2586e9a1a00ceb6e8f12b4ef4a92950632d1085c16a2643"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+    "ecu_name": "BCM ECU",
+    "ecu_id": 514,
+    "transport": "vcan",
+    "dependencies": [
+        513
+    ]
+}

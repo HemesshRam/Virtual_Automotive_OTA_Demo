@@ -1,0 +1,17 @@
+"""
+ISO 13400 DoIP Logical Addresses
+"""
+
+# Diagnostic Tester (TCU)
+TESTER_ADDRESS = 0x0E80
+
+# Vehicle ECUs
+GATEWAY_ADDRESS = 0x1001
+BCM_ADDRESS = 0x1002
+CLUSTER_ADDRESS = 0x1003
+
+LOGICAL_ADDRESS_TABLE = {
+    GATEWAY_ADDRESS: "gateway",
+    BCM_ADDRESS: "bcm",
+    CLUSTER_ADDRESS: "cluster",
+}

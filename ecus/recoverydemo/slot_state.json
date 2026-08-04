@@ -1,0 +1,12 @@
+{
+    "active_slot": "A",
+    "confirmed_slot": "A",
+    "previous_slot": "A",
+    "pending_slot": "",
+    "pending_file": "",
+    "pending_version": "",
+    "boot_attempts": 0,
+    "max_boot_attempts": 1,
+    "rollback_reason": "INCOMPLETE_FLASH_JOURNAL",
+    "last_transition": "ROLLED_BACK"
+}

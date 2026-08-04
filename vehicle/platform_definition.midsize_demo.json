@@ -1,0 +1,177 @@
+{
+  "schema_version": "2.0",
+  "vehicle": {
+    "vin": "DEMO-VIN-MIDSIZE-001",
+    "model": "Virtual Vehicle Mid-Size",
+    "platform": "Sample4 Mid-Size OTA",
+    "architecture": "zonal"
+  },
+  "tester": {
+    "name": "TCU",
+    "logical_address": "0x0E80",
+    "role": "ota_orchestrator_and_diagnostic_tester"
+  },
+  "central_gateway": {
+    "name": "Central Compute Gateway",
+    "logical_address": "0x1001",
+    "protocols": [
+      "DoIP",
+      "UDS"
+    ],
+    "role": "diagnostic_backbone_router"
+  },
+  "ota_allowed_uds_services": [
+    "0x10",
+    "0x11",
+    "0x22",
+    "0x27",
+    "0x31",
+    "0x34",
+    "0x36",
+    "0x37",
+    "0x3E"
+  ],
+  "zones": [
+    {
+      "zone_id": "gateway_zone",
+      "display_name": "Gateway Zone Controller",
+      "controller_role": "gateway_and_backbone_zone",
+      "network": {
+        "type": "CAN_FD",
+        "nominal_bitrate": 500000,
+        "data_bitrate": 2000000
+      },
+      "policy": {
+        "default_health": "AUTO",
+        "programming_allowed": true,
+        "allowed_services": "ota_default"
+      },
+      "ecus": [
+        {
+          "ecu_name": "Gateway ECU",
+          "short_name": "gateway",
+          "ecu_role": "central_gateway",
+          "logical_address": "0x1001",
+          "can_id": "0x201",
+          "criticality": "critical",
+          "dependencies": [],
+          "on_unavailable": "abort_campaign",
+          "on_dependency_failed": "abort_campaign"
+        },
+        {
+          "ecu_name": "TCU Proxy ECU",
+          "short_name": "tcu_proxy",
+          "ecu_role": "telematics_connectivity",
+          "logical_address": "0x1011",
+          "can_id": "0x211",
+          "criticality": "critical",
+          "dependencies": [
+            "Gateway ECU"
+          ],
+          "on_unavailable": "abort_campaign",
+          "on_dependency_failed": "abort_campaign"
+        }
+      ]
+    },
+    {
+      "zone_id": "body_zone",
+      "display_name": "Body Zone Controller",
+      "controller_role": "body_domain_aggregator",
+      "network": {
+        "type": "CAN_FD",
+        "nominal_bitrate": 500000,
+        "data_bitrate": 2000000
+      },
+      "policy": {
+        "default_health": "AUTO",
+        "programming_allowed": true,
+        "allowed_services": "ota_default"
+      },
+      "ecus": [
+        {
+          "ecu_name": "BCM ECU",
+          "short_name": "bcm",
+          "ecu_role": "body_controller",
+          "logical_address": "0x1002",
+          "can_id": "0x202",
+          "criticality": "critical",
+          "dependencies": [
+            "Gateway ECU"
+          ],
+          "on_unavailable": "abort_campaign",
+          "on_dependency_failed": "abort_campaign"
+        },
+        {
+          "ecu_name": "Door FL ECU",
+          "short_name": "door_fl",
+          "ecu_role": "door_module_front_left",
+          "logical_address": "0x1012",
+          "can_id": "0x212",
+          "criticality": "optional",
+          "dependencies": [
+            "BCM ECU"
+          ],
+          "on_unavailable": "skip",
+          "on_dependency_failed": "skip"
+        }
+      ]
+    },
+    {
+      "zone_id": "cockpit_zone",
+      "display_name": "Cockpit Zone Controller",
+      "controller_role": "cockpit_domain_aggregator",
+      "network": {
+        "type": "CAN_FD",
+        "nominal_bitrate": 500000,
+        "data_bitrate": 2000000
+      },
+      "policy": {
+        "default_health": "AUTO",
+        "programming_allowed": true,
+        "allowed_services": "ota_default"
+      },
+      "ecus": [
+        {
+          "ecu_name": "Cluster ECU",
+          "short_name": "cluster",
+          "ecu_role": "instrument_cluster",
+          "logical_address": "0x1003",
+          "can_id": "0x203",
+          "criticality": "optional",
+          "dependencies": [
+            "Gateway ECU",
+            "BCM ECU"
+          ],
+          "on_unavailable": "skip",
+          "on_dependency_failed": "skip"
+        },
+        {
+          "ecu_name": "Infotainment ECU",
+          "short_name": "ivI",
+          "ecu_role": "infotainment_head_unit",
+          "logical_address": "0x1013",
+          "can_id": "0x213",
+          "criticality": "optional",
+          "dependencies": [
+            "Gateway ECU"
+          ],
+          "on_unavailable": "skip",
+          "on_dependency_failed": "skip"
+        },
+        {
+          "ecu_name": "HVAC ECU",
+          "short_name": "hvac",
+          "ecu_role": "cabin_climate_controller",
+          "logical_address": "0x1014",
+          "can_id": "0x214",
+          "criticality": "optional",
+          "dependencies": [
+            "BCM ECU"
+          ],
+          "on_unavailable": "skip",
+          "on_dependency_failed": "skip"
+        }
+      ]
+    }
+  ]
+}

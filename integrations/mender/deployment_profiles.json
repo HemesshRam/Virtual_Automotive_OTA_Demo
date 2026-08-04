@@ -1,0 +1,80 @@
+{
+  "dynamic_generic": {
+    "description": "Generic Mender artifact that reads the active runtime scenario file",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "topology_default",
+    "offline_ecus": [],
+    "use_active_scenario": true,
+    "active_scenario_file": "runtime/mender/active_scenario.json"
+  },
+  "default_doip": {
+    "description": "Default topology, DoIP, all ECUs online",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "topology_default",
+    "offline_ecus": []
+  },
+  "default_vcan": {
+    "description": "Default topology, VCAN, all ECUs online",
+    "transport": "vcan",
+    "topology_mode": "default",
+    "dependency_mode": "topology_default",
+    "offline_ecus": []
+  },
+  "body_two_doip": {
+    "description": "One zone with two ECUs, DoIP, all online",
+    "transport": "doip",
+    "topology_mode": "body_two_ecus",
+    "dependency_mode": "topology_default",
+    "offline_ecus": []
+  },
+  "body_two_vcan": {
+    "description": "One zone with two ECUs, VCAN, all online",
+    "transport": "vcan",
+    "topology_mode": "body_two_ecus",
+    "dependency_mode": "topology_default",
+    "offline_ecus": []
+  },
+  "dependency_cluster_gateway": {
+    "description": "Cluster depends directly on Gateway",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "cluster_depends_gateway",
+    "offline_ecus": []
+  },
+  "dependency_bcm_before_gateway": {
+    "description": "BCM before Gateway before Cluster",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "bcm_before_gateway",
+    "offline_ecus": []
+  },
+  "gateway_offline": {
+    "description": "Gateway ECU offline failure case",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "topology_default",
+    "offline_ecus": [
+      "Gateway ECU"
+    ]
+  },
+  "cluster_offline": {
+    "description": "Cluster ECU offline failure or skip case",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "topology_default",
+    "offline_ecus": [
+      "Cluster ECU"
+    ]
+  },
+  "partial_skip_cluster": {
+    "description": "Partial rollout with optional/incompatible Cluster ECU",
+    "transport": "doip",
+    "topology_mode": "default",
+    "dependency_mode": "partial_skip_cluster",
+    "offline_ecus": [
+      "Cluster ECU"
+    ]
+  }
+}

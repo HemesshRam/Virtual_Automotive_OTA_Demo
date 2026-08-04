@@ -1,0 +1,45 @@
+{
+  "signed": {
+    "role": "root",
+    "version": 1,
+    "expires": "2027-07-16T00:00:00Z",
+    "keys": {
+      "demo-root": {
+        "algorithm": "hmac-sha256",
+        "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+      }
+    },
+    "roles": {
+      "root": {
+        "keyids": [
+          "demo-root"
+        ],
+        "threshold": 1
+      },
+      "timestamp": {
+        "keyids": [
+          "demo-root"
+        ],
+        "threshold": 1
+      },
+      "snapshot": {
+        "keyids": [
+          "demo-root"
+        ],
+        "threshold": 1
+      },
+      "targets": {
+        "keyids": [
+          "demo-root"
+        ],
+        "threshold": 1
+      }
+    }
+  },
+  "signatures": [
+    {
+      "keyid": "demo-root",
+      "sig": "e1454d6ee1564385095b57e74a0239f3190216023c955edcaf550ff4af0d8616"
+    }
+  ]
+}

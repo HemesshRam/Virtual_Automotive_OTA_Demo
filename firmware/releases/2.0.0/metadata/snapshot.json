@@ -1,0 +1,22 @@
+{
+  "signed": {
+    "role": "snapshot",
+    "version": 4,
+    "expires": "2026-09-25T00:00:00Z",
+    "meta": {
+      "targets.json": {
+        "version": 4,
+        "length": 1505,
+        "hashes": {
+          "sha256": "10b999e854b588d9789bbc12b5835e4679c3ed9da2035ac921767eef6623eb14"
+        }
+      }
+    }
+  },
+  "signatures": [
+    {
+      "keyid": "demo-root",
+      "sig": "0cb07a55d14564ecc2f22ec9ecb4cdadc481b28d1aa602350489711e74051256"
+    }
+  ]
+}

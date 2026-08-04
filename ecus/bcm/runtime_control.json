@@ -1,0 +1,5 @@
+{
+  "heartbeat_enabled": true,
+  "diagnostics_enabled": true,
+  "programming_enabled": true
+}

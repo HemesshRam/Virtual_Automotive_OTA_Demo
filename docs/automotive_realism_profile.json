@@ -1,0 +1,139 @@
+{
+  "profile_version": "1.0",
+  "purpose": "Machine-checkable simulation profile for production-style automotive OTA behavior.",
+  "autosar": {
+    "simulated_modules": [
+      "DCM",
+      "FBL",
+      "NvM",
+      "SecOC",
+      "ComM",
+      "PduR"
+    ],
+    "dcm_role": "Maps tester requests to ECU diagnostic services and NRCs.",
+    "fbl_role": "Owns erase, program, verify, activate, reboot, and rollback transitions.",
+    "implemented_as": [
+      "transport/uds/codec.py",
+      "ecus/base/uds_can_programmer.py",
+      "transport/doip/server.py",
+      "ecus/base/installer.py",
+      "ecus/base/reboot_manager.py"
+    ]
+  },
+  "uds": {
+    "supported_services": {
+      "0x10": "DiagnosticSessionControl",
+      "0x11": "ECUReset",
+      "0x22": "ReadDataByIdentifier",
+      "0x27": "SecurityAccess",
+      "0x31": "RoutineControl",
+      "0x34": "RequestDownload",
+      "0x36": "TransferData",
+      "0x37": "RequestTransferExit",
+      "0x3E": "TesterPresent"
+    },
+    "simulated_nrc_matrix": {
+      "0x11": "serviceNotSupported",
+      "0x12": "subFunctionNotSupported",
+      "0x13": "incorrectLengthOrInvalidFormat",
+      "0x22": "conditionsNotCorrect",
+      "0x24": "requestSequenceError",
+      "0x31": "requestOutOfRange",
+      "0x33": "securityAccessDenied",
+      "0x35": "invalidKey",
+      "0x36": "exceedNumberOfAttempts",
+      "0x37": "requiredTimeDelayNotExpired",
+      "0x70": "uploadDownloadNotAccepted",
+      "0x72": "generalProgrammingFailure",
+      "0x73": "wrongBlockSequenceCounter",
+      "0x78": "responsePending",
+      "0x7E": "subFunctionNotSupportedInActiveSession",
+      "0x7F": "serviceNotSupportedInActiveSession"
+    }
+  },
+  "isotp": {
+    "bus": "CAN FD over SocketCAN/vcan",
+    "addressing_modes_simulated": [
+      "normal_11bit"
+    ],
+    "timing_and_flow_control": {
+      "single_frame_payload": 62,
+      "first_frame_payload": 62,
+      "consecutive_frame_payload": 63,
+      "flow_control_timeout_seconds": 2.0,
+      "max_wait_frames": 8,
+      "stmin_millisecond_range": "0x00-0x7F",
+      "stmin_microsecond_range": "0xF1-0xF9",
+      "overflow_handling": true,
+      "sequence_mismatch_reset": true
+    }
+  },
+  "uptane": {
+    "simulated_roles": [
+      "root",
+      "timestamp",
+      "snapshot",
+      "targets",
+      "director",
+      "image"
+    ],
+    "implemented_roles": [
+      "root",
+      "timestamp",
+      "snapshot",
+      "targets"
+    ],
+    "simulated_delegation_model": {
+      "director": "Vehicle/campaign authorization role represented by campaign compatibility and dependency checks.",
+      "image": "Artifact integrity and target metadata role represented by targets metadata and firmware hashes."
+    },
+    "signature_model": "Signed root metadata plus HMAC-SHA256 role signatures and local metadata version rollback protection for demo; production would use asymmetric offline/online keys and HSM-backed key custody.",
+    "rollback_protection": {
+      "implemented": true,
+      "state_file": "tcu/trust/trusted_metadata_state.json",
+      "behavior": "TCU rejects metadata role versions lower than the last trusted local version."
+    }
+  },
+  "flash": {
+    "memory_type": "NOR-like file-backed flash emulator",
+    "erase_value": "0xFF",
+    "sector_size": 4096,
+    "page_size": 256,
+    "bit_transition_rule": "1_to_0_only_until_erase",
+    "readback_verification": true,
+    "ab_slots": true,
+    "journal_states": [
+      "INITIALIZED",
+      "PREPARED",
+      "ERASED",
+      "PROGRAMMED",
+      "VERIFIED",
+      "PENDING_ACTIVATION",
+      "BOOTED_PENDING",
+      "CONFIRMED",
+      "ROLLED_BACK"
+    ]
+  },
+  "ethernet": {
+    "simulated_network": "DoIP over Linux TCP/UDP sockets",
+    "vehicle_identification": "UDP/13400",
+    "routing_activation": "TCP/13400",
+    "diagnostics": "TCP/13400",
+    "vlans_simulated": [
+      {
+        "name": "ota_backbone",
+        "vlan_id": 100,
+        "traffic": "TCU to gateway DoIP"
+      },
+      {
+        "name": "diagnostic_service",
+        "vlan_id": 200,
+        "traffic": "UDS diagnostic payloads"
+      }
+    ],
+    "tsn_simulated": {
+      "priority": "diagnostic traffic preferred over legacy demo traffic",
+      "implemented_as": "strict raw UDS default in DoIP server"
+    }
+  }
+}

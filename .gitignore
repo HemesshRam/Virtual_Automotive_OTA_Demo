@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+
+logs/
+runtime/
+tcu/state/
+ota_server/state/
+
+ecus/*/downloads/
+ecus/*/installed/
+ecus/*/slots/*/*.bin
+ecus/*/slots/*/flash_layout.json
+ecus/*/slots/*/flash_journal.json
+ecus/*/slots/*/activation_control.json
+
+/tmp/

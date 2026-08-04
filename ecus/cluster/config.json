@@ -1,0 +1,8 @@
+{
+    "ecu_name": "Cluster ECU",
+    "ecu_id": 515,
+    "transport": "vcan",
+    "dependencies": [
+        514
+    ]
+}

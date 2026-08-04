@@ -1,0 +1,115 @@
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-gateway
+    command: ["bash", "scripts/require_vcan.sh", "python", "run_gateway.py"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DOIP_GATEWAY_HOST: 127.0.0.1
+      DOIP_GATEWAY_PORT: 13400
+      OTA_USE_ZONAL_CONTROLLERS: ${OTA_USE_ZONAL_CONTROLLERS:-0}
+      OTA_ZONE_TRANSPORT: ${OTA_ZONE_TRANSPORT:-in_process}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+      OTA_ECU_GATEWAY_HEARTBEAT_ENABLED: ${OTA_ECU_GATEWAY_HEARTBEAT_ENABLED:-1}
+      OTA_ECU_HEARTBEAT_INTERVAL_SECONDS: ${OTA_ECU_HEARTBEAT_INTERVAL_SECONDS:-1.0}
+      OTA_ECU_GATEWAY_CAN_CHANNEL: ${OTA_ECU_GATEWAY_CAN_CHANNEL:-vcan_gate}
+    volumes:
+      - ../:/app
+
+  zone-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-zone-gateway
+    command: ["bash", "scripts/require_vcan.sh", "python", "-m", "zones.run_zone_service", "gateway_zone"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    profiles: ["deep-zonal"]
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTA_ZONE_GATEWAY_ZONE_HEALTH: ${OTA_ZONE_GATEWAY_ZONE_HEALTH:-AUTO}
+      OTA_ZONE_GATEWAY_ZONE_PROGRAMMING_ALLOWED: ${OTA_ZONE_GATEWAY_ZONE_PROGRAMMING_ALLOWED:-1}
+      OTA_ZONE_HEARTBEAT_MONITOR_ENABLED: ${OTA_ZONE_HEARTBEAT_MONITOR_ENABLED:-1}
+      OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS: ${OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS:-3.0}
+      OTA_ZONE_HEARTBEAT_GRACE_SECONDS: ${OTA_ZONE_HEARTBEAT_GRACE_SECONDS:-5.0}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+    volumes:
+      - ../:/app
+
+  zone-body:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-zone-body
+    command: ["bash", "scripts/require_vcan.sh", "python", "-m", "zones.run_zone_service", "body_zone"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    profiles: ["deep-zonal"]
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTA_ZONE_BODY_ZONE_HEALTH: ${OTA_ZONE_BODY_ZONE_HEALTH:-AUTO}
+      OTA_ZONE_BODY_ZONE_PROGRAMMING_ALLOWED: ${OTA_ZONE_BODY_ZONE_PROGRAMMING_ALLOWED:-1}
+      OTA_ZONE_HEARTBEAT_MONITOR_ENABLED: ${OTA_ZONE_HEARTBEAT_MONITOR_ENABLED:-1}
+      OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS: ${OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS:-3.0}
+      OTA_ZONE_HEARTBEAT_GRACE_SECONDS: ${OTA_ZONE_HEARTBEAT_GRACE_SECONDS:-5.0}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+    volumes:
+      - ../:/app
+
+  zone-cluster:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-zone-cluster
+    command: ["bash", "scripts/require_vcan.sh", "python", "-m", "zones.run_zone_service", "cluster_zone"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    profiles: ["deep-zonal"]
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTA_ZONE_CLUSTER_ZONE_HEALTH: ${OTA_ZONE_CLUSTER_ZONE_HEALTH:-AUTO}
+      OTA_ZONE_CLUSTER_ZONE_PROGRAMMING_ALLOWED: ${OTA_ZONE_CLUSTER_ZONE_PROGRAMMING_ALLOWED:-1}
+      OTA_ZONE_HEARTBEAT_MONITOR_ENABLED: ${OTA_ZONE_HEARTBEAT_MONITOR_ENABLED:-1}
+      OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS: ${OTA_ZONE_HEARTBEAT_TIMEOUT_SECONDS:-3.0}
+      OTA_ZONE_HEARTBEAT_GRACE_SECONDS: ${OTA_ZONE_HEARTBEAT_GRACE_SECONDS:-5.0}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+    volumes:
+      - ../:/app
+
+  bcm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-bcm
+    command: ["bash", "scripts/require_vcan.sh", "python", "run_bcm.py"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTA_ECU_BCM_HEARTBEAT_ENABLED: ${OTA_ECU_BCM_HEARTBEAT_ENABLED:-1}
+      OTA_ECU_HEARTBEAT_INTERVAL_SECONDS: ${OTA_ECU_HEARTBEAT_INTERVAL_SECONDS:-1.0}
+      OTA_ECU_BCM_CAN_CHANNEL: ${OTA_ECU_BCM_CAN_CHANNEL:-vcan_bcm}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+    volumes:
+      - ../:/app
+
+  cluster:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-cluster
+    command: ["bash", "scripts/require_vcan.sh", "python", "run_cluster.py"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    network_mode: host
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTA_ECU_CLUSTER_HEARTBEAT_ENABLED: ${OTA_ECU_CLUSTER_HEARTBEAT_ENABLED:-1}
+      OTA_ECU_HEARTBEAT_INTERVAL_SECONDS: ${OTA_ECU_HEARTBEAT_INTERVAL_SECONDS:-1.0}
+      OTA_ECU_CLUSTER_CAN_CHANNEL: ${OTA_ECU_CLUSTER_CAN_CHANNEL:-vcan_clus}
+      OTA_VEHICLE_TOPOLOGY: ${OTA_VEHICLE_TOPOLOGY:-vehicle/topology.json}
+    volumes:
+      - ../:/app

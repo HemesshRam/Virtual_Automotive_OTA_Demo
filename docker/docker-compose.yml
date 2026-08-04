@@ -1,0 +1,96 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: virtual-ota-mqtt
+    command: ["/usr/sbin/mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    volumes:
+      - ./mosquitto/mosquitto-no-auth.conf:/mosquitto-no-auth.conf:ro
+    networks:
+      - ota_net
+
+  ota_server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-server
+    command: ["python", "-m", "ota_server.app"]
+    environment:
+      OTA_SERVER_HOST: 0.0.0.0
+      OTA_SERVER_PORT: 8080
+      OTA_HTTPS_ENABLED: 0
+      MQTT_BROKER_HOST: mqtt
+      MQTT_BROKER_PORT: 1883
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../:/app
+    depends_on:
+      - mqtt
+    networks:
+      - ota_net
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-gateway
+    command: ["python", "run_gateway.py"]
+    environment:
+      DOIP_GATEWAY_HOST: gateway
+      DOIP_GATEWAY_PORT: 13400
+    volumes:
+      - ../:/app
+    networks:
+      - ota_net
+
+  bcm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-bcm
+    command: ["python", "run_bcm.py"]
+    volumes:
+      - ../:/app
+    networks:
+      - ota_net
+
+  cluster:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-cluster
+    command: ["python", "run_cluster.py"]
+    volumes:
+      - ../:/app
+    networks:
+      - ota_net
+
+  tcu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: virtual-ota-tcu
+    command: ["python", "-m", "tcu.main"]
+    environment:
+      OTA_SERVER_URL: http://ota_server:8080
+      OTA_STATUS_URL: http://ota_server:8080/status
+      DOIP_GATEWAY_HOST: gateway
+      DOIP_GATEWAY_PORT: 13400
+      MQTT_BROKER_HOST: mqtt
+      MQTT_BROKER_PORT: 1883
+    volumes:
+      - ../:/app
+    depends_on:
+      - ota_server
+      - gateway
+      - mqtt
+    stdin_open: true
+    tty: true
+    profiles:
+      - interactive
+    networks:
+      - ota_net
+
+networks:
+  ota_net:
+    driver: bridge

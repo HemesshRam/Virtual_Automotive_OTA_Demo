@@ -1,0 +1,12 @@
+{
+    "current_version": "1.0.0",
+    "confirmed_version": "1.0.0",
+    "pending_version": "",
+    "active_slot": "A",
+    "confirmed_slot": "A",
+    "pending_slot": "",
+    "pending_commit": false,
+    "boot_attempts": 0,
+    "last_boot_outcome": "ROLLED_BACK",
+    "rollback_reason": "INCOMPLETE_FLASH_JOURNAL"
+}

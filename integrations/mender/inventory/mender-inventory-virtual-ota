@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+def resolve_project_root() -> Path:
+    env_root = os.getenv("OTA_PROJECT_ROOT", "").strip()
+    candidates = []
+    if env_root:
+        candidates.append(Path(env_root).expanduser().resolve())
+
+    cwd = Path.cwd().resolve()
+    candidates.extend([cwd] + list(cwd.parents))
+    home_repo = Path.home() / "virtual-automotive-ota"
+    candidates.append(home_repo.resolve())
+
+    for candidate in candidates:
+        if (candidate / "vehicle" / "topology_loader.py").exists() and (
+            candidate / "tcu" / "main.py"
+        ).exists():
+            return candidate
+
+    raise RuntimeError(
+        "Unable to locate project root. Set OTA_PROJECT_ROOT to the "
+        "virtual-automotive-ota repository path."
+    )
+
+
+PROJECT_ROOT = resolve_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from vehicle.topology_loader import VehicleTopology
+
+
+def _load_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as fp:
+        return json.load(fp)
+
+
+def emit(key: str, value) -> None:
+    if value is None:
+        return
+    print(f"{key}={value}")
+
+
+def main() -> int:
+    topology = VehicleTopology()
+    summary = _load_json(PROJECT_ROOT / "tcu" / "state" / "mender_execution_summary.json")
+    emit("vehicle_model", topology.data.get("vehicle", {}).get("model"))
+    emit("vehicle_architecture", topology.data.get("vehicle", {}).get("architecture"))
+    emit("vehicle_platform", topology.data.get("vehicle", {}).get("platform"))
+    emit("vehicle_topology_file", topology.path)
+    emit("vehicle_platform_definition", topology.data.get("platform_definition"))
+    emit("vehicle_runtime_mapping", topology.data.get("runtime_mapping"))
+    emit("ota_transport_selected", os.getenv("OTA_TRANSPORT", "doip"))
+    emit("ota_cloud_control", os.getenv("OTA_CLOUD_CONTROL", "mqtt"))
+
+    ecu_registry = topology.ecu_registry()
+    emit("ecu_count", len(ecu_registry))
+    emit("zone_count", len(topology.build_zone_registry()))
+    emit("ecu_names", ",".join(sorted(ecu_registry)))
+
+    if summary:
+        emit("ota_last_campaign_id", summary.get("campaign_id", ""))
+        emit("ota_last_status", summary.get("status", ""))
+        emit("ota_last_reason", summary.get("reason", ""))
+        emit("ota_last_transport", summary.get("transport", ""))
+        emit("ota_last_cloud_control", summary.get("cloud_control", ""))
+        emit("ota_last_scenario", summary.get("scenario_name", ""))
+        emit("ota_last_update_order", " -> ".join(summary.get("update_order", [])))
+        emit("ota_last_eligible_ecus", ",".join(summary.get("eligible_ecus", [])))
+        emit("ota_last_discovered_ecus", ",".join(summary.get("discovered_ecus", [])))
+        emit("ota_current_artifact", summary.get("artifact_name", ""))
+        emit("ota_current_software_name", summary.get("software_name", ""))
+        emit("ota_current_software_version", summary.get("software_version", ""))
+        if summary.get("artifact_name"):
+            emit("rootfs-image.tcu-ota-module.version", summary.get("artifact_name", ""))
+        if summary.get("software_name") and summary.get("software_version"):
+            emit(
+                f"rootfs-image.{summary['software_name']}.version",
+                summary.get("software_version", ""),
+            )
+
+    for short_name in ("gateway", "bcm", "cluster"):
+        version = _load_json(PROJECT_ROOT / "ecus" / short_name / "version.json")
+        if version:
+            emit(f"{short_name}_version", version.get("current_version"))
+            emit(f"{short_name}_slot", version.get("active_slot"))
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

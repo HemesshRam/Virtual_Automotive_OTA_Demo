@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACTION="${1:-}"
+PAYLOAD_DIR="${2:-}"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${OTA_PROJECT_ROOT:-}"
+if [[ -z "${PROJECT_ROOT}" ]]; then
+    if [[ -f "${PWD}/integrations/mender/run_tcu_from_mender.py" ]]; then
+        PROJECT_ROOT="${PWD}"
+    elif [[ -f "${HOME}/virtual-automotive-ota/integrations/mender/run_tcu_from_mender.py" ]]; then
+        PROJECT_ROOT="${HOME}/virtual-automotive-ota"
+    else
+        echo "tcu-ota-module: unable to locate project root; set OTA_PROJECT_ROOT" >&2
+        exit 1
+    fi
+fi
+RUNNER="${PROJECT_ROOT}/integrations/mender/run_tcu_from_mender.py"
+PYTHON_BIN="${PROJECT_ROOT}/.venv/bin/python"
+
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+    PYTHON_BIN="python3"
+fi
+
+case "${ACTION}" in
+    SupportsRollback)
+        echo "No"
+        ;;
+    NeedsArtifactReboot)
+        echo "No"
+        ;;
+    ArtifactInstall)
+        "${PYTHON_BIN}" "${RUNNER}" "${PAYLOAD_DIR}"
+        ;;
+    ArtifactCommit|Cleanup|ArtifactFailure|ArtifactRollback|ArtifactReboot|ArtifactVerifyReboot|ArtifactRollbackReboot|ArtifactVerifyRollbackReboot|Download)
+        exit 0
+        ;;
+    Provides|Inventory|Identity|NeedsUnpackedArtifact|ProvidePayloadFileSizes)
+        exit 0
+        ;;
+    *)
+        exit 0
+        ;;
+esac

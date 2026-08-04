@@ -1,0 +1,6 @@
+{
+    "ecu_name": "Gateway ECU",
+    "ecu_id": 513,
+    "transport": "vcan",
+    "dependencies": []
+}

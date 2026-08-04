@@ -1,0 +1,29 @@
+{
+  "scenario_name": "partial_skip_cluster_https_mqtt",
+  "base_topology": "vehicle/topology.json",
+  "base_campaign": "campaigns/campaign_v1.default.json",
+  "transport": "doip",
+  "zonal_mode": "deep-zonal",
+  "topology_mode": "default",
+  "dependency_mode": "partial_skip_cluster",
+  "offline_ecus": [],
+  "offline_feature": "heartbeat",
+  "server_url": "https://127.0.0.1:8080",
+  "public_base_url": "https://127.0.0.1:8080",
+  "status_url": "https://127.0.0.1:8080/status",
+  "quiet": 1,
+  "ecu_runtime": {
+    "Gateway ECU": {
+      "diagnostics_enabled": true,
+      "programming_enabled": true
+    },
+    "BCM ECU": {
+      "diagnostics_enabled": true,
+      "programming_enabled": true
+    },
+    "Cluster ECU": {
+      "diagnostics_enabled": true,
+      "programming_enabled": true
+    }
+  }
+}

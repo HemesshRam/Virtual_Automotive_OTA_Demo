@@ -1,0 +1,12 @@
+{
+  "planning_mode": "dynamic",
+  "dependency_source_priority": [
+    "campaign_overrides",
+    "vehicle_topology",
+    "ecu_report"
+  ],
+  "allow_optional_skip": true,
+  "abort_on_critical_missing": true,
+  "treat_already_updated_as_satisfied": true,
+  "print_planning_report": true
+}

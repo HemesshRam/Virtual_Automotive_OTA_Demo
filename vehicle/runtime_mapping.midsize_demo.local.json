@@ -1,0 +1,38 @@
+{
+  "schema_version": "2.0",
+  "mapping_name": "local_linux_midsize_demo",
+  "transport_backbone": {
+    "type": "AUTOMOTIVE_ETHERNET_SIM",
+    "gateway_host": "127.0.0.1",
+    "gateway_doip_port": 13400
+  },
+  "zones": [
+    {
+      "zone_id": "gateway_zone",
+      "service_host": "127.0.10.21",
+      "service_bind_host": "127.0.10.21",
+      "service_port": 15001,
+      "network": {
+        "channel": "vcan_gate"
+      }
+    },
+    {
+      "zone_id": "body_zone",
+      "service_host": "127.0.10.22",
+      "service_bind_host": "127.0.10.22",
+      "service_port": 15002,
+      "network": {
+        "channel": "vcan_bcm"
+      }
+    },
+    {
+      "zone_id": "cockpit_zone",
+      "service_host": "127.0.10.23",
+      "service_bind_host": "127.0.10.23",
+      "service_port": 15003,
+      "network": {
+        "channel": "vcan_clus"
+      }
+    }
+  ]
+}

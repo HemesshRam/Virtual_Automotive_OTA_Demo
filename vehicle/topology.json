@@ -1,0 +1,6 @@
+{
+  "schema_version": "2.0",
+  "topology_layout": "composed",
+  "platform_definition": "platform_definition.json",
+  "runtime_mapping": "runtime_mapping.local.json"
+}
