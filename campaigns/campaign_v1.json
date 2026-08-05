@@ -1,44 +1,4 @@
 {
-    "campaign_id": "OTA_2026_001",
-    "created_by": "OTA Management Server",
-    "priority": "HIGH",
-    "release_version": "2.0.0",
-    "rollback_enabled": true,
-    "targets": [
-        {
-            "ecu_name": "Gateway ECU",
-            "firmware_file": "gateway_v2.bin",
-            "hardware_variant": "GENERIC",
-            "mandatory": true,
-            "minimum_bootloader": "1.0",
-            "minimum_supported_version": "1.0.0",
-            "priority": 1,
-            "requires_reboot": true,
-            "target_version": "2.0.0"
-        },
-        {
-            "ecu_name": "BCM ECU",
-            "firmware_file": "bcm_v2.bin",
-            "hardware_variant": "GENERIC",
-            "mandatory": true,
-            "minimum_bootloader": "1.0",
-            "minimum_supported_version": "1.0.0",
-            "priority": 2,
-            "requires_reboot": true,
-            "target_version": "2.0.0"
-        },
-        {
-            "ecu_name": "Cluster ECU",
-            "firmware_file": "cluster_v2.bin",
-            "hardware_variant": "GENERIC",
-            "mandatory": true,
-            "minimum_bootloader": "1.0",
-            "minimum_supported_version": "1.0.0",
-            "priority": 3,
-            "requires_reboot": true,
-            "target_version": "2.0.0"
-        }
-    ],
-    "transport": "VCAN",
-    "vehicle_model": "Virtual Vehicle"
+    "campaign_id": "TEST",
+    "targets": []
 }

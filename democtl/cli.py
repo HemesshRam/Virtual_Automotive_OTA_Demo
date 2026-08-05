@@ -378,6 +378,10 @@ def command_run_tcu(args: argparse.Namespace) -> int:
         rc = _auto_publish_mqtt_job(env)
         if rc != 0:
             print("Fresh MQTT job publish failed. Continuing with the configured TCU flow.")
+        env = {
+            **env,
+            "OTA_AUTO_PUBLISH_MQTT_JOB": "0",
+        }
     return _run_foreground([sys.executable, "-m", "tcu.main"], env)
 
 

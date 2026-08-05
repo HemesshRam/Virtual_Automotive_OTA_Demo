@@ -16,7 +16,7 @@ class PostInstallValidator:
     """
 
     INITIAL_WAIT_SECONDS = 3
-    VALIDATION_TIMEOUT_SECONDS = 20
+    VALIDATION_TIMEOUT_SECONDS = 45
     POLL_INTERVAL_SECONDS = 2
 
     def validate(self, campaign, transport="VCAN"):
@@ -78,30 +78,40 @@ class PostInstallValidator:
 
         all_updated = True
 
-        results = []
+        discovered_by_name = {
+            ecu.ecu_name: ecu
+            for ecu in updated_vehicle.get_all_ecus()
+        }
+        validated_names = []
 
-        for ecu in updated_vehicle.get_all_ecus():
-
-            expected = target_versions.get(ecu.ecu_name)
+        for ecu_name in sorted(validation_target_names):
+            ecu = discovered_by_name.get(ecu_name)
+            expected = target_versions.get(ecu_name)
 
             if expected is None:
-                skipped_reason = skipped_targets.get(ecu.ecu_name, "NOT_TARGETED")
+                continue
+
+            if ecu is None:
                 print(
-                    f"{ecu.ecu_name:<15} "
-                    f"Version : {ecu.current_version:<10} "
-                    f"SKIPPED ({skipped_reason})"
+                    f"{ecu_name:<15} "
+                    f"Version : {'MISSING':<10} "
+                    f"FAIL"
+                )
+                all_updated = False
+                reporter.report(
+                    ecu_name,
+                    "FAILED",
+                    100,
+                    "UNKNOWN",
+                    campaign_id=campaign_id,
+                    error="POST_INSTALL_VALIDATION_MISSING_ECU",
                 )
                 continue
 
             actual = ecu.current_version
-
             passed = version_eq(actual, expected)
-
             status = "PASS" if passed else "FAIL"
-
-            results.append(
-                (ecu.ecu_name, actual, status)
-            )
+            validated_names.append(ecu_name)
 
             print(
                 f"{ecu.ecu_name:<15} "
@@ -144,6 +154,19 @@ class PostInstallValidator:
             if not passed:
                 all_updated = False
 
+        for ecu in updated_vehicle.get_all_ecus():
+
+            expected = target_versions.get(ecu.ecu_name)
+
+            if expected is None:
+                skipped_reason = skipped_targets.get(ecu.ecu_name, "NOT_TARGETED")
+                print(
+                    f"{ecu.ecu_name:<15} "
+                    f"Version : {ecu.current_version:<10} "
+                    f"SKIPPED ({skipped_reason})"
+                )
+                continue
+
         #
         # Final Result
         #
@@ -154,8 +177,15 @@ class PostInstallValidator:
 
             print("=" * 70)
             print("OTA UPDATE VERIFIED SUCCESSFULLY")
-            print("ALL ECUs ARE NOW RUNNING SOFTWARE VERSION "
-                  f"{campaign.release_version}")
+            print(
+                "Validated ECUs running target version : "
+                + ", ".join(sorted(validated_names))
+            )
+            if skipped_targets:
+                print(
+                    "Skipped optional ECUs               : "
+                    + ", ".join(sorted(skipped_targets))
+                )
             print("=" * 70)
 
         else:
@@ -191,11 +221,15 @@ class PostInstallValidator:
 
     @staticmethod
     def _all_targets_running(vehicle, target_versions):
-        for ecu in vehicle.get_all_ecus():
-            expected = target_versions.get(ecu.ecu_name)
-            if expected is None:
-                continue
-            if not version_eq(ecu.current_version, expected):
+        discovered = {
+            ecu.ecu_name: ecu.current_version
+            for ecu in vehicle.get_all_ecus()
+        }
+        for ecu_name, expected in target_versions.items():
+            actual = discovered.get(ecu_name)
+            if actual is None:
+                return False
+            if not version_eq(actual, expected):
                 return False
         return True
 
