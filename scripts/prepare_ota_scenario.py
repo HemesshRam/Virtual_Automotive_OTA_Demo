@@ -121,41 +121,59 @@ def _scenario_overrides(args: argparse.Namespace, scenario_name: str) -> dict:
 
 
 def _runtime_commands(args: argparse.Namespace) -> list[str]:
+    offline_ecus = set(OFFLINE_CHOICES.get(args.offline, []))
     if args.runtime == "docker":
         if args.topology == "body-two":
             return [
                 "bash scripts/run_body_multi_gateway_pair.sh",
                 "bash scripts/run_body_multi_body_zone.sh",
-                "bash scripts/run_body_multi_bcm_ecu.sh",
-                "bash scripts/run_body_multi_cluster_ecu.sh",
+                *(
+                    []
+                    if "BCM ECU" in offline_ecus
+                    else ["bash scripts/run_body_multi_bcm_ecu.sh"]
+                ),
+                *(
+                    []
+                    if "Cluster ECU" in offline_ecus
+                    else ["bash scripts/run_body_multi_cluster_ecu.sh"]
+                ),
                 "bash scripts/run_ota_server_https.sh",
             ]
-        return [
+        commands = [
             "bash scripts/run_gateway_zone_pair.sh",
-            "bash scripts/run_bcm_zone_pair.sh",
-            "bash scripts/run_cluster_zone_pair.sh",
-            "bash scripts/run_ota_server_https.sh",
         ]
+        if "BCM ECU" not in offline_ecus:
+            commands.append("bash scripts/run_bcm_zone_pair.sh")
+        if "Cluster ECU" not in offline_ecus:
+            commands.append("bash scripts/run_cluster_zone_pair.sh")
+        commands.append("bash scripts/run_ota_server_https.sh")
+        return commands
 
     if args.topology == "body-two":
-        return [
+        commands = [
             "OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 run_gateway.py",
-            "OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 run_bcm.py",
-            "OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json OTA_ECU_CLUSTER_CAN_CHANNEL=vcan_bcm python3 run_cluster.py",
             "OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 -m zones.run_zone_service gateway_zone",
             "OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 -m zones.run_zone_service body_zone",
-            "bash scripts/run_ota_server_https.sh",
         ]
+        if "BCM ECU" not in offline_ecus:
+            commands.append("OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 run_bcm.py")
+        if "Cluster ECU" not in offline_ecus:
+            commands.append("OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json OTA_ECU_CLUSTER_CAN_CHANNEL=vcan_bcm python3 run_cluster.py")
+        commands.append("bash scripts/run_ota_server_https.sh")
+        return commands
 
-    return [
+    commands = [
         "python3 run_gateway.py",
-        "python3 run_bcm.py",
-        "python3 run_cluster.py",
         "python3 -m zones.run_zone_service gateway_zone",
         "python3 -m zones.run_zone_service body_zone",
         "python3 -m zones.run_zone_service cluster_zone",
-        "bash scripts/run_ota_server_https.sh",
     ]
+    if "BCM ECU" not in offline_ecus:
+        commands.insert(1, "python3 run_bcm.py")
+    if "Cluster ECU" not in offline_ecus:
+        commands.insert(2 if "BCM ECU" not in offline_ecus else 1, "python3 run_cluster.py")
+    commands.append("bash scripts/run_ota_server_https.sh")
+    return commands
 
 
 def _print_next_steps(

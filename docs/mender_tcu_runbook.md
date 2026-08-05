@@ -3,8 +3,8 @@
 ## 1. Bootstrap
 
 ```bash
-git clone <repo-url>
-cd virtual-automotive-ota
+git clone https://github.com/HemesshRam/Virtual_Automotive_OTA_Demo.git
+cd Virtual_Automotive_OTA_Demo
 export PROJECT_ROOT="$(pwd)"
 
 bash bootstrap.sh --with-mender
@@ -14,16 +14,10 @@ source .venv/bin/activate
 ## 2. Preflight
 
 ```bash
-bash scripts/preflight_ubuntu.sh --runtime both --tcu mender --transport both
+bash scripts/preflight_ubuntu.sh --runtime both --tcu mender --transport both --auto-vcan
 ```
 
-For strict port checking:
-
-```bash
-bash scripts/preflight_ubuntu.sh --runtime both --tcu mender --transport both --require-free-ports
-```
-
-## 3. Install Repo Update Module And Inventory Script
+## 3. Install Mender Repo Scripts
 
 ```bash
 cd "$PROJECT_ROOT"
@@ -38,7 +32,7 @@ sudo install -D -m 0755 \
   /usr/share/mender/inventory/mender-inventory-virtual-ota
 ```
 
-## 4. Export Repo Root For Inventory
+## 4. Export Repo Root For Mender
 
 ```bash
 echo "export OTA_PROJECT_ROOT=$PROJECT_ROOT" | sudo tee /etc/profile.d/virtual-ota-mender.sh
@@ -46,7 +40,7 @@ sudo chmod 0644 /etc/profile.d/virtual-ota-mender.sh
 export OTA_PROJECT_ROOT="$PROJECT_ROOT"
 ```
 
-## 5. Create Custom Device With Organization Token
+## 5. Register Mender Device
 
 ```bash
 sudo mender-setup \
@@ -62,34 +56,33 @@ sudo mender-setup \
 sudo systemctl restart mender-authd mender-updated
 ```
 
-## 7. Watch Mender Logs
-
-Authentication:
-
-```bash
-journalctl -u mender-authd -f
-```
-
-Update client:
-
-```bash
-journalctl -u mender-updated -f
-```
-
-## 8. Validate Inventory
+## 7. Validate Inventory
 
 ```bash
 /usr/share/mender/inventory/mender-inventory-virtual-ota
 ```
 
-## 9. Prepare Scenario For Mender Artifact
+## 8. Start ECU Runtime
 
-Default topology, DoIP, all ECUs online:
+Docker ECUs:
 
 ```bash
 cd "$PROJECT_ROOT"
 source .venv/bin/activate
+bash scripts/start_demo.sh
+```
 
+Python ECUs:
+
+```bash
+python3 -m democtl start-runtime --restart --ensure-vcan
+```
+
+## 9. Build Mender Artifact
+
+Default topology, DoIP, Docker ECUs:
+
+```bash
 python3 scripts/prepare_ota_scenario.py \
   --transport doip \
   --topology default \
@@ -102,7 +95,7 @@ python3 scripts/prepare_ota_scenario.py \
   --build-mender auto
 ```
 
-Default topology, VCAN, Cluster offline:
+Default topology, VCAN, Cluster offline, Python ECUs:
 
 ```bash
 python3 scripts/prepare_ota_scenario.py \
@@ -117,7 +110,7 @@ python3 scripts/prepare_ota_scenario.py \
   --build-mender auto
 ```
 
-Body zone with 2 ECUs, VCAN, Cluster offline:
+Body zone with 2 ECUs, VCAN, Cluster offline, Python ECUs:
 
 ```bash
 python3 scripts/prepare_ota_scenario.py \
@@ -132,44 +125,30 @@ python3 scripts/prepare_ota_scenario.py \
   --build-mender auto
 ```
 
-## 10. Inspect Built Artifact
-
-Use the exact file path printed by `prepare_ota_scenario.py`.
+## 10. Inspect Artifact
 
 ```bash
 mender-artifact read /tmp/YOUR_ARTIFACT_NAME.mender
 ```
 
-## 11. Start ECU Runtime Before Deployment
-
-Docker ECUs:
+## 11. Watch Mender Logs
 
 ```bash
-cd "$PROJECT_ROOT"
-source .venv/bin/activate
-bash scripts/start_demo.sh
+journalctl -u mender-authd -f
 ```
-
-Python ECUs:
-
-- See `docs/runbook_python_ecus.md`
-
-## 12. Start OTA Server If Needed
 
 ```bash
-cd "$PROJECT_ROOT"
-source .venv/bin/activate
-bash scripts/run_ota_server_https.sh
+journalctl -u mender-updated -f
 ```
 
-## 13. Deploy In Hosted Mender
+## 12. Deploy In Hosted Mender
 
 1. Upload the generated `.mender` artifact
-2. Create a deployment
+2. Create deployment
 3. Select the `virtual-ota-tcu` device
 4. Start deployment
 
-## 14. Check OTA Result
+## 13. Check Result
 
 ```bash
 curl -k https://127.0.0.1:8080/status
@@ -181,7 +160,7 @@ cat ecus/bcm/version.json
 cat ecus/cluster/version.json
 ```
 
-## 15. Restart Mender Again If Needed
+## 14. Restart Mender If Needed
 
 ```bash
 sudo systemctl restart mender-authd mender-updated

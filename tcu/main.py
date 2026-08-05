@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import suppress
 from contextlib import redirect_stdout
 from io import StringIO
 
@@ -22,6 +23,37 @@ from tcu.dynamic_update_planner import DynamicUpdatePlanner
 
 
 RELEASE_DIRECTORY = "firmware/releases/2.0.0"
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _auto_publish_mqtt_job(quiet: bool) -> None:
+    if not _env_flag("OTA_AUTO_PUBLISH_MQTT_JOB", True):
+        return
+
+    from ota_server.campaign_scheduler import publish_current_campaign_once
+    from ota_server.clear_mqtt_job_notification import clear_retained_job_notification
+
+    print()
+    print("=" * 60)
+    print("AUTO MQTT JOB PUBLISH")
+    print("=" * 60)
+    print("Preparing a fresh MQTT OTA job for this TCU run...")
+
+    with suppress(Exception):
+        clear_retained_job_notification()
+
+    payload = publish_current_campaign_once()
+
+    if not quiet:
+        print(f"Campaign notification published : {payload['campaign_id']}")
+        print(f"MQTT Job ID                     : {payload['job_id']}")
+    print("=" * 60)
 
 
 def _run_step(label, operation, quiet=False, dump_on_false=True):
@@ -362,6 +394,7 @@ def main():
 
     if cloud_choice == "2":
         try:
+            _auto_publish_mqtt_job(quiet)
             campaign_data = cloud.download_campaign_from_mqtt()
         except DuplicateMQTTJob as exc:
             print(f"MQTT duplicate job skipped: {exc}")

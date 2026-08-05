@@ -7,6 +7,7 @@ runtime="both"
 tcu_mode="both"
 transport="both"
 require_free_ports=0
+auto_vcan=0
 
 usage() {
     cat <<'EOF'
@@ -16,6 +17,7 @@ Options:
   --runtime <python|docker|both>       Runtime mode to validate (default: both)
   --tcu <mender|non-mender|both>       TCU mode to validate (default: both)
   --transport <vcan|doip|both>         Transport to validate (default: both)
+  --auto-vcan                          Automatically run setup_vcan_zones.sh when VCAN is requested
   --require-free-ports                 Fail if demo ports are already listening
   -h, --help                           Show this help
 EOF
@@ -34,6 +36,10 @@ while (($#)); do
         --transport)
             transport="${2:?missing value for --transport}"
             shift 2
+            ;;
+        --auto-vcan)
+            auto_vcan=1
+            shift
             ;;
         --require-free-ports)
             require_free_ports=1
@@ -136,6 +142,11 @@ check_port() {
     fi
 }
 
+interface_is_up() {
+    local iface="$1"
+    ip link show "$iface" >/dev/null 2>&1
+}
+
 echo
 echo "============================================================"
 echo "UBUNTU PREFLIGHT"
@@ -144,6 +155,7 @@ echo "Project root : ${PROJECT_ROOT}"
 echo "Runtime      : ${runtime}"
 echo "TCU mode     : ${tcu_mode}"
 echo "Transport    : ${transport}"
+echo "Auto VCAN    : ${auto_vcan}"
 echo "============================================================"
 
 if [[ -r /etc/os-release ]]; then
@@ -216,6 +228,22 @@ if [[ "$transport" == "vcan" || "$transport" == "both" ]]; then
     else
         fail "modprobe command not available"
     fi
+
+    if (( auto_vcan == 1 )); then
+        if sudo ./scripts/setup_vcan_zones.sh >/dev/null; then
+            pass "VCAN interfaces ensured via scripts/setup_vcan_zones.sh"
+        else
+            fail "Unable to auto-create VCAN interfaces via scripts/setup_vcan_zones.sh"
+        fi
+    fi
+
+    for iface in vcan_gate vcan_bcm vcan_clus; do
+        if interface_is_up "$iface"; then
+            pass "VCAN interface is up: $iface"
+        else
+            warn "VCAN interface not up: $iface"
+        fi
+    done
 fi
 
 if [[ "$tcu_mode" == "mender" || "$tcu_mode" == "both" ]]; then
