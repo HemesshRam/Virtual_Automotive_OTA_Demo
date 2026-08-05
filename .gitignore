@@ -15,3 +15,7 @@ ecus/*/slots/*/flash_journal.json
 ecus/*/slots/*/activation_control.json
 
 /tmp/
+
+Virtual_Automotive_OTA_Demo/
+ecus/*/slot_state.json
+ecus/*/version.json
