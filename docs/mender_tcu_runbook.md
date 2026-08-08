@@ -42,10 +42,21 @@ export OTA_PROJECT_ROOT="$PROJECT_ROOT"
 
 ## 5. Register Mender Device
 
+The `mender-client4` package provides `mender-setup`, `mender-auth`, and
+`mender-update`. On a fresh Ubuntu install, it is usually not available from
+the default APT sources, so install it through Mender's supported installer
+first.
+
 ```bash
+command -v mender-setup >/dev/null || {
+  curl -fLsS https://get.mender.io -o /tmp/get-mender.sh
+  sudo bash /tmp/get-mender.sh mender-client4
+}
+
 sudo mender-setup \
   --device-type virtual-ota-tcu \
-  --server https://hosted.mender.io \
+  --hosted-mender \
+  --server-url https://hosted.mender.io \
   --tenant-token 'YOUR_ORG_TOKEN' \
   --demo-polling
 ```

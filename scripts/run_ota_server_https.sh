@@ -5,8 +5,16 @@ cd "$(dirname "$0")/.."
 
 cert_file="${OTA_TLS_CERT_FILE:-docker/tls/ota-server.crt}"
 key_file="${OTA_TLS_KEY_FILE:-docker/tls/ota-server.key}"
+ca_cert_file="$(dirname "${cert_file}")/demo-ca.crt"
 
-if [[ ! -f "${cert_file}" || ! -f "${key_file}" ]]; then
+needs_regen=0
+if [[ ! -f "${cert_file}" || ! -f "${key_file}" || ! -f "${ca_cert_file}" ]]; then
+    needs_regen=1
+elif ! openssl x509 -in "${ca_cert_file}" -noout -text | grep -q "Key Usage"; then
+    needs_regen=1
+fi
+
+if [[ "${needs_regen}" -eq 1 ]]; then
     bash scripts/generate_demo_tls_cert.sh
 fi
 
