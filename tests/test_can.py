@@ -2,16 +2,22 @@ import can
 
 from ecus.base.can_interface import CANInterface
 
-can_bus = CANInterface()
 
-msg = can.Message(
-    arbitration_id=0x123,
-    data=[1, 2, 3, 4],
-    is_extended_id=False,
-)
+def main():
+    can_bus = CANInterface()
 
-can_bus.send(msg)
+    msg = can.Message(
+        arbitration_id=0x123,
+        data=[1, 2, 3, 4],
+        is_extended_id=False,
+    )
 
-print("Message sent successfully.")
+    can_bus.send(msg)
 
-can_bus.shutdown()
+    print("Message sent successfully.")
+
+    can_bus.shutdown()
+
+
+if __name__ == "__main__":
+    main()

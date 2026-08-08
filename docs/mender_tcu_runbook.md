@@ -1,5 +1,10 @@
 # Mender TCU Runbook
 
+This runbook assumes the recommended virtualenv flow created by `bootstrap.sh`.
+If a customer prefers system Python instead of `.venv`, they must still install
+the same packages from `requirements.txt` into their active Python environment
+before running the commands below.
+
 ## 1. Bootstrap
 
 ```bash

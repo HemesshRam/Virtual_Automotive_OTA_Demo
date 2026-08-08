@@ -218,7 +218,7 @@ class PartialCampaignBehaviorTest(unittest.TestCase):
         ), patch.object(
             scheduler.transport,
             "send_firmware",
-            side_effect=[False],
+            side_effect=[False, False],
         ), patch(
             "tcu.update_scheduler.reporter.report"
         ) as report_mock, patch.object(

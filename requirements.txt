@@ -23,3 +23,4 @@ wrapt==1.17.3
 Flask>=3.0.0
 requests>=2.31.0
 paho-mqtt>=2.1.0
+doipclient==1.2.1

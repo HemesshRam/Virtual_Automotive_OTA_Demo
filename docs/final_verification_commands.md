@@ -4,6 +4,11 @@
 This file lists the commands to verify the implemented OTA framework features in
 the repository.
 
+The recommended workflow is to use the virtualenv created by `bootstrap.sh`.
+If a customer prefers system Python instead, they must install the same
+`requirements.txt` packages into that active interpreter before running the
+commands below.
+
 ## 1. Quick Static Verification
 
 Run:
