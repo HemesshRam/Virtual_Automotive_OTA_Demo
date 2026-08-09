@@ -1,10 +1,5 @@
 # Python ECU Runbook
 
-This runbook assumes the recommended virtualenv flow created by `bootstrap.sh`.
-If a customer prefers system Python instead of `.venv`, they must still install
-the same packages from `requirements.txt` into their active Python environment
-before running the commands below.
-
 ## 1. Bootstrap
 
 ```bash
@@ -100,7 +95,125 @@ python3 -m democtl run \
 ls logs/democtl
 ```
 
-## 5. Check Result
+## 5. Explicit ECU And Zone Commands
+
+Default topology, all ECUs online:
+
+Terminal 1:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 run_gateway.py
+```
+
+Terminal 2:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 run_bcm.py
+```
+
+Terminal 3:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 run_cluster.py
+```
+
+Terminal 4:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 -m zones.run_zone_service gateway_zone
+```
+
+Terminal 5:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 -m zones.run_zone_service body_zone
+```
+
+Terminal 6:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+python3 -m zones.run_zone_service cluster_zone
+```
+
+Terminal 7:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_ota_server_https.sh
+```
+
+Default topology, Cluster offline:
+
+Run the same commands as above, but do not start:
+
+```bash
+python3 run_cluster.py
+```
+
+Body zone with 2 ECUs:
+
+Terminal 1:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+PYTHONPATH="$PROJECT_ROOT" python3 -m zones.run_zone_service gateway_zone
+```
+
+Terminal 2:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+PYTHONPATH="$PROJECT_ROOT" python3 -m zones.run_zone_service body_zone
+```
+
+Terminal 3:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 run_gateway.py
+```
+
+Terminal 4:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json python3 run_bcm.py
+```
+
+Terminal 5:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+OTA_VEHICLE_TOPOLOGY=vehicle/topology.body_multi_ecu.json OTA_ECU_CLUSTER_CAN_CHANNEL=vcan_bcm python3 run_cluster.py
+```
+
+Terminal 6:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_ota_server_https.sh
+```
+
+## 6. Check Result
 
 ```bash
 curl -k https://127.0.0.1:8080/status
@@ -112,13 +225,13 @@ cat ecus/bcm/version.json
 cat ecus/cluster/version.json
 ```
 
-## 6. Stop Runtime
+## 7. Stop Runtime
 
 ```bash
 python3 -m democtl teardown
 ```
 
-## 7. Manual Fallback
+## 8. Manual Fallback
 
 Prepare only:
 

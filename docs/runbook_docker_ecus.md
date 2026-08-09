@@ -1,10 +1,5 @@
 # Docker ECU Runbook
 
-This runbook assumes the recommended virtualenv flow created by `bootstrap.sh`.
-If a customer prefers system Python instead of `.venv`, they must still install
-the same packages from `requirements.txt` into their active Python environment
-before running the commands below.
-
 ## 1. Bootstrap
 
 ```bash
@@ -100,7 +95,91 @@ docker compose -f docker/docker-compose.ecus.yml logs bcm
 docker compose -f docker/docker-compose.ecus.yml logs cluster
 ```
 
-## 6. Check Result
+## 6. Explicit ECU Container Commands
+
+Default topology, all ECUs online:
+
+Terminal 1:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_gateway_zone_pair.sh
+```
+
+Terminal 2:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_bcm_zone_pair.sh
+```
+
+Terminal 3:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_cluster_zone_pair.sh
+```
+
+Default topology, Cluster offline:
+
+Run:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_gateway_zone_pair.sh
+```
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_bcm_zone_pair.sh
+```
+
+Do not run:
+
+```bash
+bash scripts/run_cluster_zone_pair.sh
+```
+
+Body zone with 2 ECUs:
+
+Terminal 1:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_body_multi_gateway_pair.sh
+```
+
+Terminal 2:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_body_multi_body_zone.sh
+```
+
+Terminal 3:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_body_multi_bcm_ecu.sh
+```
+
+Terminal 4:
+
+```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
+bash scripts/run_body_multi_cluster_ecu.sh
+```
+
+## 7. Check Result
 
 ```bash
 curl -k https://127.0.0.1:8080/status
@@ -112,13 +191,13 @@ cat ecus/bcm/version.json
 cat ecus/cluster/version.json
 ```
 
-## 7. Stop Runtime
+## 8. Stop Runtime
 
 ```bash
 python3 -m democtl teardown
 ```
 
-## 8. Manual Fallback
+## 9. Manual Fallback
 
 Prepare only:
 
