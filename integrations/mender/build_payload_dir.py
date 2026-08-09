@@ -34,6 +34,10 @@ def build_payload_dir(
     tls_verify: str = "docker/tls/demo-ca.crt",
     use_active_scenario: bool = False,
     active_scenario_file: str = "runtime/mender/active_scenario.json",
+    runtime: str = "docker",
+    auto_start_runtime: bool = True,
+    ensure_vcan: bool = True,
+    restart_runtime: bool = True,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     target_campaign = output_dir / "campaign.json"
@@ -58,6 +62,10 @@ def build_payload_dir(
         "tls_verify": tls_verify,
         "use_active_scenario": bool(use_active_scenario),
         "active_scenario_file": active_scenario_file,
+        "runtime": runtime,
+        "auto_start_runtime": bool(auto_start_runtime),
+        "ensure_vcan": bool(ensure_vcan),
+        "restart_runtime": bool(restart_runtime),
     }
     with open(output_dir / "deployment.json", "w", encoding="utf-8") as fp:
         json.dump(deployment, fp, indent=2)
@@ -79,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tls-verify", default="docker/tls/demo-ca.crt")
     parser.add_argument("--use-active-scenario", action="store_true")
     parser.add_argument("--active-scenario-file", default="runtime/mender/active_scenario.json")
+    parser.add_argument("--runtime", choices=["docker", "python"], default="docker")
     parser.add_argument("--list-profiles", action="store_true")
     args = parser.parse_args(argv)
 
@@ -124,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         tls_verify=args.tls_verify,
         use_active_scenario=use_active_scenario,
         active_scenario_file=active_scenario_file,
+        runtime=args.runtime,
     )
     print(f"Payload directory created: {output_dir}")
     print(f"Deployment file          : {output_dir / 'deployment.json'}")

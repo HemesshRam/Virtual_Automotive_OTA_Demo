@@ -5,7 +5,7 @@ interfaces=(vcan_gate vcan_bcm vcan_clus)
 missing=()
 
 for iface in "${interfaces[@]}"; do
-    if ! ip link show "$iface" >/dev/null 2>&1; then
+    if [[ ! -e "/sys/class/net/$iface" ]]; then
         missing+=("$iface")
     fi
 done

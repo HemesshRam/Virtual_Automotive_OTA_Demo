@@ -68,7 +68,11 @@ class DynamicUpdatePlanner:
                 continue
 
             if ecu is None:
-                if target.mandatory and policy.unavailable_aborts_campaign:
+                if (
+                    target.mandatory
+                    and not getattr(target, "skip_if_unavailable", False)
+                    and policy.unavailable_aborts_campaign
+                ):
                     classifications[ecu_name] = "ABORT_REQUIRED:ECU_NOT_FOUND"
                     blocking_errors.append(f"{ecu_name} is mandatory but not discovered")
                 else:
@@ -77,7 +81,13 @@ class DynamicUpdatePlanner:
 
             if self._version_matches(ecu.current_version, target.target_version):
                 classifications[ecu_name] = "ALREADY_SATISFIED"
-            elif target.mandatory or policy.unavailable_aborts_campaign:
+            elif (
+                target.mandatory
+                and not getattr(target, "skip_if_incompatible", False)
+            ) or (
+                policy.unavailable_aborts_campaign
+                and not getattr(target, "skip_if_incompatible", False)
+            ):
                 classifications[ecu_name] = "ABORT_REQUIRED:NOT_ELIGIBLE"
                 blocking_errors.append(
                     f"{ecu_name} is required but not eligible for update"

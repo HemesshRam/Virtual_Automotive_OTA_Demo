@@ -35,7 +35,11 @@ class CampaignManager:
 
                     priority=item["priority"],
 
-                    requires_reboot=item["requires_reboot"]
+                    requires_reboot=item["requires_reboot"],
+
+                    skip_if_unavailable=item.get("skip_if_unavailable", False),
+
+                    skip_if_incompatible=item.get("skip_if_incompatible", False),
 
                 )
             )

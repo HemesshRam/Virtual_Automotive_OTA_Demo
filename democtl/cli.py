@@ -24,6 +24,7 @@ PROCESS_STATE_FILE = PROJECT_ROOT / "runtime" / "democtl" / "processes.json"
 LOG_DIR = PROJECT_ROOT / "logs" / "democtl"
 DOCKER_COMPOSE_FILE = PROJECT_ROOT / "docker" / "docker-compose.ecus.yml"
 MOSQUITTO_CONFIG_FILE = PROJECT_ROOT / "docker" / "mosquitto" / "mosquitto-no-auth.conf"
+CONTAINER_PROJECT_ROOT = Path("/app")
 
 
 def _load_json(path: Path) -> dict:
@@ -81,6 +82,40 @@ def _base_env(extra: dict[str, str] | None = None) -> dict[str, str]:
     return env
 
 
+def _containerize_repo_path(value: str) -> str:
+    text = str(value).strip()
+    if not text:
+        return text
+    try:
+        candidate = Path(text)
+    except Exception:
+        return text
+    if not candidate.is_absolute():
+        return text
+    try:
+        relative = candidate.resolve().relative_to(PROJECT_ROOT.resolve())
+    except Exception:
+        return text
+    return str(CONTAINER_PROJECT_ROOT / relative)
+
+
+def _docker_runtime_env(env: dict[str, str]) -> dict[str, str]:
+    docker_env = env.copy()
+    docker_env["LOCAL_UID"] = str(os.getuid())
+    docker_env["LOCAL_GID"] = str(os.getgid())
+    docker_env["OTA_PROJECT_ROOT"] = str(CONTAINER_PROJECT_ROOT)
+    for key in (
+        "OTA_VEHICLE_TOPOLOGY",
+        "OTA_PLATFORM_DEFINITION",
+        "OTA_RUNTIME_MAPPING",
+        "OTA_CAMPAIGN_FILE",
+        "OTA_TLS_VERIFY",
+    ):
+        if key in docker_env:
+            docker_env[key] = _containerize_repo_path(docker_env[key])
+    return docker_env
+
+
 def _run_foreground(command: list[str], env: dict[str, str] | None = None) -> int:
     result = subprocess.run(
         command,
@@ -89,6 +124,13 @@ def _run_foreground(command: list[str], env: dict[str, str] | None = None) -> in
         check=False,
     )
     return int(result.returncode)
+
+
+def _ensure_vcan_runtime() -> int:
+    command = ["./scripts/setup_vcan_zones.sh"]
+    if os.geteuid() != 0:
+        command.insert(0, "sudo")
+    return _run_foreground(command)
 
 
 def _auto_publish_mqtt_job(env: dict[str, str]) -> int:
@@ -168,6 +210,52 @@ def _port_is_listening(host: str, port: int) -> bool:
             return True
     except OSError:
         return False
+
+
+def _wait_for_listener(name: str, host: str, port: int, timeout_seconds: float = 30.0) -> bool:
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        if _port_is_listening(host, port):
+            return True
+        time.sleep(0.5)
+    print(f"{name} did not become ready on {host}:{port} within {timeout_seconds:.0f}s")
+    return False
+
+
+def _runtime_readiness_checks(info: dict, env: dict[str, str]) -> list[tuple[str, str, int]]:
+    checks: list[tuple[str, str, int]] = []
+    topology_mode = info.get("topology_mode", "default")
+    zonal_transport = env.get("OTA_ZONE_TRANSPORT", "").strip().lower()
+    transport = info.get("transport", "").strip().lower()
+
+    checks.append(("OTA HTTPS server", "127.0.0.1", 8080))
+
+    if transport == "doip":
+        checks.append(
+            (
+                "DoIP gateway",
+                env.get("DOIP_GATEWAY_HOST", "127.0.0.1"),
+                int(env.get("DOIP_GATEWAY_PORT", "13400")),
+            )
+        )
+
+    if zonal_transport == "tcp":
+        checks.append(("Gateway zone service", "127.0.10.21", 15001))
+        checks.append(("Body zone service", "127.0.10.22", 15002))
+        if topology_mode != "body_two_ecus":
+            checks.append(("Cluster zone service", "127.0.10.23", 15003))
+
+    return checks
+
+
+def _wait_for_runtime_ready(info: dict, env: dict[str, str]) -> int:
+    checks = _runtime_readiness_checks(info, env)
+    if not checks:
+        return 0
+    for name, host, port in checks:
+        if not _wait_for_listener(name, host, port):
+            return 1
+    return 0
 
 
 def _ensure_mqtt_broker(info: dict, env: dict[str, str]) -> int:
@@ -283,6 +371,8 @@ def command_prepare(args: argparse.Namespace) -> int:
     ]
     if args.offline_feature:
         forwarded_args.extend(["--offline-feature", args.offline_feature])
+    if args.optional_targets:
+        forwarded_args.extend(["--optional-targets", args.optional_targets])
     if args.scenario_name:
         forwarded_args.extend(["--scenario-name", args.scenario_name])
     if args.campaign:
@@ -312,7 +402,7 @@ def command_start_runtime(args: argparse.Namespace) -> int:
         command_teardown(argparse.Namespace())
 
     if args.ensure_vcan:
-        rc = _run_foreground(["sudo", "./scripts/setup_vcan_zones.sh"])
+        rc = _ensure_vcan_runtime()
         if rc != 0:
             return rc
 
@@ -323,9 +413,7 @@ def command_start_runtime(args: argparse.Namespace) -> int:
 
     if runtime == "docker":
         services = _docker_services_for(topology)
-        docker_env = env.copy()
-        docker_env["LOCAL_UID"] = str(os.getuid())
-        docker_env["LOCAL_GID"] = str(os.getgid())
+        docker_env = _docker_runtime_env(env)
 
         rc = _run_foreground(
             [
@@ -351,6 +439,9 @@ def command_start_runtime(args: argparse.Namespace) -> int:
             env,
         )
         _save_process_state(runtime, [server], scenario_name)
+        rc = _wait_for_runtime_ready(info, env)
+        if rc != 0:
+            return rc
         print(f"Docker runtime started for scenario `{scenario_name}`.")
         print(f"OTA server log: {server['log']}")
         return 0
@@ -360,6 +451,9 @@ def command_start_runtime(args: argparse.Namespace) -> int:
     for name, command in _python_commands_for(topology, offline_ecus):
         process_records.append(_start_background_process(name, command, env))
     _save_process_state(runtime, process_records, scenario_name)
+    rc = _wait_for_runtime_ready(info, env)
+    if rc != 0:
+        return rc
     print(f"Python runtime started for scenario `{scenario_name}`.")
     for record in process_records:
         print(f"{record['name']}: {record['log']}")
@@ -416,6 +510,7 @@ def command_build_mender(args: argparse.Namespace) -> int:
         "gateway_cluster_updated_bcm_pending": "gateway-cluster-updated",
         "bcm_cluster_updated_gateway_pending": "bcm-cluster-updated",
     }
+    optional_targets = info.get("optional_targets", [])
     prepare_args = [
         "--transport",
         info["transport"],
@@ -436,6 +531,8 @@ def command_build_mender(args: argparse.Namespace) -> int:
     ]
     if args.artifact_name:
         prepare_args.extend(["--artifact-name", args.artifact_name])
+    if optional_targets:
+        prepare_args.extend(["--optional-targets", ",".join(optional_targets)])
     if args.keep_payload_dir:
         prepare_args.append("--keep-payload-dir")
     return int(prepare_scenario.main(prepare_args) or 0)
@@ -458,6 +555,7 @@ def command_run(args: argparse.Namespace) -> int:
         runtime=args.runtime,
         ecu_state=args.ecu_state,
         offline_feature=args.offline_feature,
+        optional_targets=args.optional_targets,
         scenario_name=args.scenario_name,
         campaign=args.campaign,
         server_url=args.server_url,
@@ -524,6 +622,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="fresh",
     )
     prepare_parser.add_argument("--offline-feature", choices=["heartbeat", "diagnostics", "programming"], default="heartbeat")
+    prepare_parser.add_argument("--optional-targets")
     prepare_parser.add_argument("--scenario-name")
     prepare_parser.add_argument("--campaign")
     prepare_parser.add_argument("--server-url")
@@ -578,6 +677,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="fresh",
     )
     run_parser.add_argument("--offline-feature", choices=["heartbeat", "diagnostics", "programming"], default="heartbeat")
+    run_parser.add_argument("--optional-targets")
     run_parser.add_argument("--scenario-name")
     run_parser.add_argument("--campaign")
     run_parser.add_argument("--server-url")

@@ -243,11 +243,11 @@ class UpdateScheduler:
             )
 
             campaign_results.append(
-                (ecu.ecu_name, "PENDING")
+                (ecu.ecu_name, "FLASHED")
             )
             completed_or_satisfied.add(ecu.ecu_name)
 
-            print(f"[PENDING COMMIT] {ecu.ecu_name}")
+            print(f"[FLASHED] {ecu.ecu_name} (awaiting post-install validation)")
             print()
 
             if self.inter_ecu_settle_seconds > 0:
@@ -336,11 +336,11 @@ class UpdateScheduler:
         if all(status == "SKIPPED" for _, status in results):
             return "NO APPLICABLE UPDATES"
 
-        if all(status in ("PASS", "PENDING", "SATISFIED") for _, status in results):
+        if all(status in ("PASS", "FLASHED", "SATISFIED") for _, status in results):
             return "FLASHING COMPLETE"
 
         if any(status == "FAILED" for _, status in results) and any(
-            status in ("PENDING", "SKIPPED") for _, status in results
+            status in ("FLASHED", "SKIPPED") for _, status in results
         ):
             return "PARTIAL_SUCCESS"
 

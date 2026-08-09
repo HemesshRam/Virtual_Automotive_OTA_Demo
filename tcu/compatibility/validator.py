@@ -39,7 +39,7 @@ class CompatibilityValidator:
             if ecu is None:
                 print("✗ ECU Not Found")
                 target_failed = True
-                if self._target_can_be_skipped(target):
+                if self._target_can_be_skipped(target, reason="ECU_NOT_FOUND"):
                     skipped_optional.append((target.ecu_name, "ECU_NOT_FOUND"))
                     print("→ Target will be skipped by availability policy")
                     continue
@@ -79,7 +79,7 @@ class CompatibilityValidator:
                 print("✓ Rollback Supported")
 
             if target_failed:
-                if not self._target_can_be_skipped(target):
+                if not self._target_can_be_skipped(target, reason="INCOMPATIBLE"):
                     overall_result = False
                 else:
                     skipped_optional.append((target.ecu_name, "INCOMPATIBLE"))
@@ -108,7 +108,13 @@ class CompatibilityValidator:
 
         return overall_result
 
-    def _target_can_be_skipped(self, target) -> bool:
+    def _target_can_be_skipped(self, target, reason: str) -> bool:
+        if reason == "ECU_NOT_FOUND" and getattr(target, "skip_if_unavailable", False):
+            return True
+
+        if reason == "INCOMPATIBLE" and getattr(target, "skip_if_incompatible", False):
+            return True
+
         if not target.mandatory:
             return True
 

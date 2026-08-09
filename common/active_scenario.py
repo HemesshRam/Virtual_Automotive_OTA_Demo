@@ -54,6 +54,7 @@ DEFAULT_SCENARIO_FIELDS = {
     "dependency_mode": "topology_default",
     "offline_ecus": [],
     "offline_feature": "heartbeat",
+    "optional_targets": [],
     "runtime": "python",
     "ecu_state_preset": "keep_current",
     "server_url": "https://127.0.0.1:8080",
@@ -109,6 +110,7 @@ def mender_payload_from_fields(fields: dict) -> dict:
         "dependency_mode": fields["dependency_mode"],
         "offline_ecus": list(fields.get("offline_ecus", [])),
         "offline_feature": fields.get("offline_feature", "heartbeat"),
+        "optional_targets": list(fields.get("optional_targets", [])),
         "ecu_state_preset": fields.get("ecu_state_preset", "keep_current"),
         "server_url": fields.get("server_url", DEFAULT_SCENARIO_FIELDS["server_url"]),
         "public_base_url": fields.get(
@@ -146,6 +148,7 @@ def activate_scenario(fields: dict) -> tuple[dict, dict]:
         "dependency_mode": merged["dependency_mode"],
         "offline_ecus": list(merged.get("offline_ecus", [])),
         "offline_feature": merged.get("offline_feature", "heartbeat"),
+        "target_overrides": merged.get("target_overrides", {}),
         "ecu_state_preset": merged.get("ecu_state_preset", "keep_current"),
         "server_url": merged.get("server_url", DEFAULT_SCENARIO_FIELDS["server_url"]),
         "public_base_url": merged.get(

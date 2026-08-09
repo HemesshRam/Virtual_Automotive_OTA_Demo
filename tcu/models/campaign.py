@@ -21,6 +21,10 @@ class CampaignTarget:
 
     requires_reboot: bool
 
+    skip_if_unavailable: bool = False
+
+    skip_if_incompatible: bool = False
+
 
 @dataclass
 class Campaign:

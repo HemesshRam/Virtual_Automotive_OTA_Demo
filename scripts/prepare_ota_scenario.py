@@ -56,8 +56,29 @@ ECU_STATE_CHOICES = {
     "bcm-cluster-updated": "bcm_cluster_updated_gateway_pending",
 }
 
+KNOWN_ECUS = {"Gateway ECU", "BCM ECU", "Cluster ECU"}
+
+
+def _parse_optional_targets(raw_value: str | None) -> list[str]:
+    if not raw_value:
+        return []
+    normalized: list[str] = []
+    for item in str(raw_value).split(","):
+        name = item.strip()
+        if not name:
+            continue
+        if name not in KNOWN_ECUS:
+            raise SystemExit(
+                f"Unknown ECU in --optional-targets: {name}. "
+                f"Known ECUs: {', '.join(sorted(KNOWN_ECUS))}"
+            )
+        if name not in normalized:
+            normalized.append(name)
+    return normalized
+
 
 def _default_scenario_name(args: argparse.Namespace) -> str:
+    optional_targets = _parse_optional_targets(getattr(args, "optional_targets", ""))
     parts = [
         "prepared",
         args.transport,
@@ -66,6 +87,12 @@ def _default_scenario_name(args: argparse.Namespace) -> str:
         args.offline,
         args.ecu_state,
     ]
+    if optional_targets:
+        optional_slug = "-".join(
+            name.lower().replace(" ecu", "").replace(" ", "-")
+            for name in optional_targets
+        )
+        parts.append(f"optional-{optional_slug}")
     return "_".join(part.replace("-", "_") for part in parts)
 
 
@@ -101,6 +128,14 @@ def _resolve_artifact_path(
 
 
 def _scenario_overrides(args: argparse.Namespace, scenario_name: str) -> dict:
+    optional_targets = _parse_optional_targets(getattr(args, "optional_targets", ""))
+    target_overrides = {
+        ecu_name: {
+            "skip_if_unavailable": True,
+            "skip_if_incompatible": True,
+        }
+        for ecu_name in optional_targets
+    }
     overrides = {
         "scenario_name": scenario_name,
         "transport": args.transport,
@@ -108,6 +143,7 @@ def _scenario_overrides(args: argparse.Namespace, scenario_name: str) -> dict:
         "dependency_mode": DEPENDENCY_CHOICES[args.dependency],
         "offline_ecus": OFFLINE_CHOICES[args.offline],
         "offline_feature": args.offline_feature,
+        "optional_targets": optional_targets,
         "ecu_state_preset": ECU_STATE_CHOICES[args.ecu_state],
         "server_url": args.server_url,
         "public_base_url": args.server_url,
@@ -115,6 +151,8 @@ def _scenario_overrides(args: argparse.Namespace, scenario_name: str) -> dict:
         "quiet": int(args.quiet),
         "zonal_mode": "deep-zonal",
     }
+    if target_overrides:
+        overrides["target_overrides"] = target_overrides
     if args.campaign:
         overrides["base_campaign"] = args.campaign
     return overrides
@@ -233,6 +271,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dependency", choices=sorted(DEPENDENCY_CHOICES), required=True)
     parser.add_argument("--offline", choices=sorted(OFFLINE_CHOICES), default="none")
     parser.add_argument("--offline-feature", choices=["heartbeat", "diagnostics", "programming"], default="heartbeat")
+    parser.add_argument(
+        "--optional-targets",
+        help="Comma-separated ECU names that may be skipped if unavailable or incompatible in this run",
+    )
     parser.add_argument("--runtime", choices=["docker", "python"], required=True)
     parser.add_argument("--ecu-state", choices=sorted(ECU_STATE_CHOICES), default="fresh")
     parser.add_argument("--scenario-name")
@@ -263,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
         "dependency_mode": DEPENDENCY_CHOICES[args.dependency],
         "offline_ecus": OFFLINE_CHOICES[args.offline],
         "offline_feature": args.offline_feature,
+        "optional_targets": _parse_optional_targets(args.optional_targets),
         "runtime": args.runtime,
         "ecu_state_preset": ECU_STATE_CHOICES[args.ecu_state],
         "server_url": args.server_url,
@@ -272,6 +315,14 @@ def main(argv: list[str] | None = None) -> int:
         "quiet": int(args.quiet),
         "source": "prepare_ota_scenario",
     }
+    if fields["optional_targets"]:
+        fields["target_overrides"] = {
+            ecu_name: {
+                "skip_if_unavailable": True,
+                "skip_if_incompatible": True,
+            }
+            for ecu_name in fields["optional_targets"]
+        }
     canonical, env = activate_scenario(fields)
 
     print()
@@ -291,6 +342,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Dependency    : {env['OTA_SCENARIO_DEPENDENCY_MODE']}")
     print(f"Zonal mode    : {env['OTA_ZONE_TRANSPORT']}")
     print(f"Offline ECUs  : {env['OTA_SCENARIO_OFFLINE_ECUS'] or 'None'}")
+    if fields["optional_targets"]:
+        print(f"Optional ECUs : {', '.join(fields['optional_targets'])}")
     print(
         f"ECU state     : "
         f"{env.get('OTA_SCENARIO_ECU_STATE_PRESET_DESCRIPTION') or env.get('OTA_SCENARIO_ECU_STATE_PRESET', '')}"
