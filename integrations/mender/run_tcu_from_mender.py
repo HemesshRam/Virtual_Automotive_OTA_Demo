@@ -15,7 +15,7 @@ def resolve_project_root() -> Path:
 
     cwd = Path.cwd().resolve()
     candidates.extend([cwd] + list(cwd.parents))
-    home_repo = Path.home() / "virtual-automotive-ota"
+    home_repo = Path.home() / "Virtual_Automotive_OTA_Demo"
     candidates.append(home_repo.resolve())
 
     for candidate in candidates:
@@ -26,7 +26,7 @@ def resolve_project_root() -> Path:
 
     raise RuntimeError(
         "Unable to locate project root. Set OTA_PROJECT_ROOT to the "
-        "virtual-automotive-ota repository path."
+        "Virtual_Automotive_OTA_Demo repository path."
     )
 
 
@@ -123,6 +123,10 @@ def _scenario_overrides(payload_dir: Path, config: dict) -> dict:
 
     if "offline_ecus" in config:
         overrides["offline_ecus"] = list(config["offline_ecus"])
+    if "active_ecus" in config:
+        overrides["active_ecus"] = list(config["active_ecus"])
+    if "optional_targets" in config:
+        overrides["optional_targets"] = list(config["optional_targets"])
     if "server_url" in config:
         overrides["server_url"] = config["server_url"]
         overrides["public_base_url"] = config.get("public_base_url", config["server_url"])
@@ -131,6 +135,10 @@ def _scenario_overrides(payload_dir: Path, config: dict) -> dict:
 
 
 def _activate_runtime_scenario(config: dict) -> dict:
+    tcu_runtime = config.get("tcu_runtime", "python")
+    if tcu_runtime != "python":
+        raise RuntimeError("Mender-triggered deployments support only tcu_runtime=python")
+    ecu_runtime = config.get("ecu_runtime", config.get("runtime", "python"))
     fields = {
         "scenario_name": config.get("scenario_name", "mender_tcu_rollout"),
         "base_scenario": config.get("scenario", "scenarios/dynamic_demo_template.json"),
@@ -139,9 +147,12 @@ def _activate_runtime_scenario(config: dict) -> dict:
         "topology_mode": config.get("topology_mode", "default"),
         "dependency_mode": config.get("dependency_mode", "topology_default"),
         "offline_ecus": list(config.get("offline_ecus", [])),
+        "active_ecus": list(config.get("active_ecus", [])),
         "offline_feature": config.get("offline_feature", "heartbeat"),
         "optional_targets": list(config.get("optional_targets", [])),
-        "runtime": config.get("runtime", "docker"),
+        "runtime": ecu_runtime,
+        "ecu_runtime": ecu_runtime,
+        "tcu_runtime": tcu_runtime,
         "ecu_state_preset": config.get("ecu_state_preset", "keep_current"),
         "server_url": config.get("server_url", "https://127.0.0.1:8080"),
         "public_base_url": config.get(
@@ -155,7 +166,7 @@ def _activate_runtime_scenario(config: dict) -> dict:
         "tls_verify": config.get("tls_verify", "docker/tls/demo-ca.crt"),
         "quiet": int(config.get("quiet", 1)),
         "zonal_mode": config.get("zonal_mode", "deep-zonal"),
-        "source": "mender",
+        "source": config.get("source", "mender"),
     }
     if "campaign_id_suffix" in config:
         fields["campaign_id_suffix"] = config["campaign_id_suffix"]
@@ -176,14 +187,16 @@ def _activate_runtime_scenario(config: dict) -> dict:
 def _start_runtime_for_mender(config: dict) -> None:
     if not bool(config.get("auto_start_runtime", True)):
         return
+    if config.get("tcu_runtime", "python") != "python":
+        raise RuntimeError("Mender runtime startup supports only tcu_runtime=python")
 
-    command = [str(PROJECT_ROOT / ".venv" / "bin" / "python"), "-m", "democtl", "start-runtime"]
-    if not Path(command[0]).exists():
-        command[0] = sys.executable or "python3"
+    command = ["bash", "scripts/start_demo.sh", "--prepared", "--runtime-only"]
     if bool(config.get("restart_runtime", True)):
-        command.append("--restart")
-    if bool(config.get("ensure_vcan", True)):
-        command.append("--ensure-vcan")
+        pass
+    else:
+        command.append("--no-restart")
+    if not bool(config.get("ensure_vcan", True)):
+        command.append("--no-ensure-vcan")
 
     result = subprocess.run(
         command,

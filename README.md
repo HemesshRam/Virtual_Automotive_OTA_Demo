@@ -87,15 +87,15 @@ Default repo operating model:
 ## Vehicle Definition Files
 
 - Active topology wrapper:
-  - [vehicle/topology.json](/home/ubuntu-ota/virtual-automotive-ota/vehicle/topology.json)
+  - [vehicle/topology.json](vehicle/topology.json)
 - Default logical platform definition:
-  - [vehicle/platform_definition.json](/home/ubuntu-ota/virtual-automotive-ota/vehicle/platform_definition.json)
+  - [vehicle/platform_definition.json](vehicle/platform_definition.json)
 - Default local runtime mapping:
-  - [vehicle/runtime_mapping.local.json](/home/ubuntu-ota/virtual-automotive-ota/vehicle/runtime_mapping.local.json)
+  - [vehicle/runtime_mapping.local.json](vehicle/runtime_mapping.local.json)
 - Body-zone two-ECU topology:
-  - [vehicle/topology.body_multi_ecu.json](/home/ubuntu-ota/virtual-automotive-ota/vehicle/topology.body_multi_ecu.json)
+  - [vehicle/topology.body_multi_ecu.json](vehicle/topology.body_multi_ecu.json)
 - Mid-size architecture example:
-  - [vehicle/topology.midsize_demo.json](/home/ubuntu-ota/virtual-automotive-ota/vehicle/topology.midsize_demo.json)
+  - [vehicle/topology.midsize_demo.json](vehicle/topology.midsize_demo.json)
 
 Interpretation:
 
@@ -106,23 +106,23 @@ Interpretation:
 ## Primary Code Areas
 
 - TCU orchestrator:
-  - [tcu/main.py](/home/ubuntu-ota/virtual-automotive-ota/tcu/main.py)
+  - [tcu/main.py](tcu/main.py)
 - Scenario compiler / runtime mutation:
-  - [tcu/scenario_runner.py](/home/ubuntu-ota/virtual-automotive-ota/tcu/scenario_runner.py)
+  - [tcu/scenario_runner.py](tcu/scenario_runner.py)
 - DoIP gateway/server:
-  - [transport/doip/server.py](/home/ubuntu-ota/virtual-automotive-ota/transport/doip/server.py)
+  - [transport/doip/server.py](transport/doip/server.py)
 - UDS client programming flow:
-  - [transport/uds/client.py](/home/ubuntu-ota/virtual-automotive-ota/transport/uds/client.py)
+  - [transport/uds/client.py](transport/uds/client.py)
 - UDS flash transfer manager:
-  - [transport/uds/flash_manager.py](/home/ubuntu-ota/virtual-automotive-ota/transport/uds/flash_manager.py)
+  - [transport/uds/flash_manager.py](transport/uds/flash_manager.py)
 - ECU-side UDS programmer:
-  - [ecus/base/uds_can_programmer.py](/home/ubuntu-ota/virtual-automotive-ota/ecus/base/uds_can_programmer.py)
+  - [ecus/base/uds_can_programmer.py](ecus/base/uds_can_programmer.py)
 - OTA backend:
-  - [ota_server/app.py](/home/ubuntu-ota/virtual-automotive-ota/ota_server/app.py)
+  - [ota_server/app.py](ota_server/app.py)
 - MQTT campaign publisher:
-  - [ota_server/campaign_scheduler.py](/home/ubuntu-ota/virtual-automotive-ota/ota_server/campaign_scheduler.py)
+  - [ota_server/campaign_scheduler.py](ota_server/campaign_scheduler.py)
 - Mender bridge:
-  - [integrations/mender/run_tcu_from_mender.py](/home/ubuntu-ota/virtual-automotive-ota/integrations/mender/run_tcu_from_mender.py)
+  - [integrations/mender/run_tcu_from_mender.py](integrations/mender/run_tcu_from_mender.py)
 
 ## Tech Stack
 
@@ -146,20 +146,20 @@ Interpretation:
 Primary operational docs:
 
 - Docker ECU runbook:
-  - [docs/runbook_docker_ecus.md](/home/ubuntu-ota/virtual-automotive-ota/docs/runbook_docker_ecus.md)
+  - [docs/runbook_docker_ecus.md](docs/runbook_docker_ecus.md)
 - Python-process ECU runbook:
-  - [docs/runbook_python_ecus.md](/home/ubuntu-ota/virtual-automotive-ota/docs/runbook_python_ecus.md)
+  - [docs/runbook_python_ecus.md](docs/runbook_python_ecus.md)
 - Mender TCU setup and deployment:
-  - [docs/mender_tcu_runbook.md](/home/ubuntu-ota/virtual-automotive-ota/docs/mender_tcu_runbook.md)
+  - [docs/mender_tcu_runbook.md](docs/mender_tcu_runbook.md)
 
 Reference docs:
 
 - Architecture design:
-  - [docs/final_ota_architecture_design.md](/home/ubuntu-ota/virtual-automotive-ota/docs/final_ota_architecture_design.md)
+  - [docs/final_ota_architecture_design.md](docs/final_ota_architecture_design.md)
 - Verification commands:
-  - [docs/final_verification_commands.md](/home/ubuntu-ota/virtual-automotive-ota/docs/final_verification_commands.md)
+  - [docs/final_verification_commands.md](docs/final_verification_commands.md)
 - Docker validation checklist:
-  - [docs/docker_validation_checklist.md](/home/ubuntu-ota/virtual-automotive-ota/docs/docker_validation_checklist.md)
+  - [docs/docker_validation_checklist.md](docs/docker_validation_checklist.md)
 
 Dynamic demo launchers remain available but are lower priority than the fixed runbooks above.
 
@@ -210,19 +210,19 @@ Official and primary references used to shape the architecture and operating mod
 Repository-specific reference documents:
 
 - Architecture design:
-  - [docs/final_ota_architecture_design.md](/home/ubuntu-ota/virtual-automotive-ota/docs/final_ota_architecture_design.md)
+  - [docs/final_ota_architecture_design.md](docs/final_ota_architecture_design.md)
   - Main areas covered:
     - target architecture
     - control-plane / data-plane split
     - ECU, zone, gateway, and TCU responsibilities
 - Verification commands:
-  - [docs/final_verification_commands.md](/home/ubuntu-ota/virtual-automotive-ota/docs/final_verification_commands.md)
+  - [docs/final_verification_commands.md](docs/final_verification_commands.md)
   - Main areas covered:
     - protocol checks
     - demo validation flow
     - runtime verification commands
 - Mender integration details:
-  - [docs/mender_tcu_runbook.md](/home/ubuntu-ota/virtual-automotive-ota/docs/mender_tcu_runbook.md)
+  - [docs/mender_tcu_runbook.md](docs/mender_tcu_runbook.md)
   - Main areas covered:
     - Mender client setup
     - Update Module install

@@ -1,9 +1,16 @@
 # Mender TCU Runbook
 
-This runbook assumes the recommended virtualenv flow created by `bootstrap.sh`.
-If a customer prefers system Python instead of `.venv`, they must still install
-the same packages from `requirements.txt` into their active Python environment
-before running the commands below.
+This runbook is for:
+
+- Mender-managed TCU
+- Host Python TCU only
+- Python ECUs or Docker ECUs
+
+Docker TCU is not used for Mender deployments.
+
+For direct manual ECU startup and manual non-`democtl` execution, use:
+
+- [manual_execution_runbook.md](manual_execution_runbook.md)
 
 ## 1. Bootstrap
 
@@ -16,13 +23,30 @@ bash bootstrap.sh --with-mender
 source .venv/bin/activate
 ```
 
+If a customer prefers system Python instead of `.venv`, they must still install
+the same packages from `requirements.txt` into their active Python environment
+before running the commands below.
+
 ## 2. Preflight
 
 ```bash
 bash scripts/preflight_ubuntu.sh --runtime both --tcu mender --transport both --auto-vcan
 ```
 
-## 3. Install Mender Repo Scripts
+## 3. Install Mender Client
+
+The `mender-client4` package provides `mender-setup`, `mender-auth`, and
+`mender-update`. On a fresh Ubuntu install, it is often not available from the
+default APT sources, so install it through Mender's supported installer first.
+
+```bash
+command -v mender-setup >/dev/null || {
+  curl -fLsS https://get.mender.io -o /tmp/get-mender.sh
+  sudo bash /tmp/get-mender.sh mender-client4
+}
+```
+
+## 4. Install Repo Hooks
 
 ```bash
 cd "$PROJECT_ROOT"
@@ -37,27 +61,32 @@ sudo install -D -m 0755 \
   /usr/share/mender/inventory/mender-inventory-virtual-ota
 ```
 
-## 4. Export Repo Root For Mender
+## 5. Export Repo Root
+
+Set the repo root for both the current shell and the Mender systemd services.
 
 ```bash
 echo "export OTA_PROJECT_ROOT=$PROJECT_ROOT" | sudo tee /etc/profile.d/virtual-ota-mender.sh
 sudo chmod 0644 /etc/profile.d/virtual-ota-mender.sh
 export OTA_PROJECT_ROOT="$PROJECT_ROOT"
+
+sudo mkdir -p /etc/systemd/system/mender-authd.service.d
+sudo mkdir -p /etc/systemd/system/mender-updated.service.d
+
+cat <<EOF | sudo tee /etc/systemd/system/mender-authd.service.d/override.conf
+[Service]
+Environment=OTA_PROJECT_ROOT=$PROJECT_ROOT
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/mender-updated.service.d/override.conf
+[Service]
+Environment=OTA_PROJECT_ROOT=$PROJECT_ROOT
+EOF
 ```
 
-## 5. Register Mender Device
-
-The `mender-client4` package provides `mender-setup`, `mender-auth`, and
-`mender-update`. On a fresh Ubuntu install, it is usually not available from
-the default APT sources, so install it through Mender's supported installer
-first.
+## 6. Register Mender Device
 
 ```bash
-command -v mender-setup >/dev/null || {
-  curl -fLsS https://get.mender.io -o /tmp/get-mender.sh
-  sudo bash /tmp/get-mender.sh mender-client4
-}
-
 sudo mender-setup \
   --device-type virtual-ota-tcu \
   --hosted-mender \
@@ -66,19 +95,69 @@ sudo mender-setup \
   --demo-polling
 ```
 
-## 6. Restart Mender Services
+## 7. Restart Mender Services
 
 ```bash
+sudo systemctl daemon-reload
 sudo systemctl restart mender-authd mender-updated
 ```
 
-## 7. Validate Inventory
+## 8. Verify Mender Environment
+
+```bash
+sudo systemctl show mender-authd --property=Environment
+sudo systemctl show mender-updated --property=Environment
+```
+
+Both should include:
+
+```bash
+OTA_PROJECT_ROOT=$PROJECT_ROOT
+```
+
+## 9. Validate Inventory
 
 ```bash
 /usr/share/mender/inventory/mender-inventory-virtual-ota
 ```
 
-## 8. Start ECU Runtime
+## 10. Accept The Device
+
+In Hosted Mender:
+
+1. Open `Devices`
+2. Accept the device if it is in pending state
+3. Wait until the device is `Online`
+
+`Accepted` is not enough on its own. We want the device online before creating a deployment.
+
+## 11. Prepare Scenario And Build Artifact
+
+Use the prepared scenario that matches the demo case you want to show. This example is for
+VCAN, default topology, Gateway-only active, with BCM and Cluster treated as optional targets.
+
+```bash
+python3 scripts/prepare_ota_scenario.py \
+  --transport vcan \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime python \
+  --tcu-runtime python \
+  --ecu-state keep-current \
+  --active-ecus gateway \
+  --optional-targets "BCM ECU,Cluster ECU" \
+  --device-type virtual-ota-tcu \
+  --artifact-name virtual-ota-vcan-gateway-only-$(date +%Y%m%d%H%M%S) \
+  --build-mender auto
+```
+
+For other scenarios, change `--transport`, `--topology`, `--offline`, `--runtime`, and
+`--active-ecus` to match the case you want to show.
+
+## 12. Start ECU Runtime Only
+
+For Mender mode, start only the ECU runtime. Do not run the TCU manually.
 
 Docker ECUs:
 
@@ -91,63 +170,40 @@ bash scripts/start_demo.sh
 Python ECUs:
 
 ```bash
+cd "$PROJECT_ROOT"
+source .venv/bin/activate
 python3 -m democtl start-runtime --restart --ensure-vcan
 ```
 
-## 9. Build Mender Artifact
-
-Default topology, DoIP, Docker ECUs:
+Do **not** run:
 
 ```bash
-python3 scripts/prepare_ota_scenario.py \
-  --transport doip \
-  --topology default \
-  --dependency topology-default \
-  --offline none \
-  --runtime docker \
-  --ecu-state fresh \
-  --device-type virtual-ota-tcu \
-  --artifact-name virtual-ota-doip-default-$(date +%Y%m%d%H%M%S) \
-  --build-mender auto
+python3 -m tcu.main
+bash scripts/start_demo.sh --run-tcu
 ```
 
-Default topology, VCAN, Cluster offline, Python ECUs:
+## 13. Inspect Artifact
 
 ```bash
-python3 scripts/prepare_ota_scenario.py \
-  --transport vcan \
-  --topology default \
-  --dependency topology-default \
-  --offline cluster \
-  --runtime python \
-  --ecu-state keep-current \
-  --device-type virtual-ota-tcu \
-  --artifact-name virtual-ota-vcan-default-cluster-offline-$(date +%Y%m%d%H%M%S) \
-  --build-mender auto
+ls -lt /tmp/virtual-ota-vcan-gateway-only-*.mender | head -n 1
+mender-artifact read /tmp/virtual-ota-vcan-gateway-only-*.mender
+sudo cat /var/lib/mender/device_type
 ```
 
-Body zone with 2 ECUs, VCAN, Cluster offline, Python ECUs:
+The artifact device type and the installed device type should both be:
 
 ```bash
-python3 scripts/prepare_ota_scenario.py \
-  --transport vcan \
-  --topology body-two \
-  --dependency topology-default \
-  --offline cluster \
-  --runtime python \
-  --ecu-state keep-current \
-  --device-type virtual-ota-tcu \
-  --artifact-name virtual-ota-vcan-body-two-cluster-offline-$(date +%Y%m%d%H%M%S) \
-  --build-mender auto
+virtual-ota-tcu
 ```
 
-## 10. Inspect Artifact
+## 14. Deploy In Hosted Mender
 
-```bash
-mender-artifact read /tmp/YOUR_ARTIFACT_NAME.mender
-```
+1. Upload the generated `.mender` artifact
+2. Create a deployment
+3. Select the `virtual-ota-tcu` device
+4. Start the deployment
 
-## 11. Watch Mender Logs
+## 15. Watch Mender Logs
 
 ```bash
 journalctl -u mender-authd -f
@@ -157,27 +213,27 @@ journalctl -u mender-authd -f
 journalctl -u mender-updated -f
 ```
 
-## 12. Deploy In Hosted Mender
+## 16. Recovery If Deployment Stays Queued
 
-1. Upload the generated `.mender` artifact
-2. Create deployment
-3. Select the `virtual-ota-tcu` device
-4. Start deployment
-
-## 13. Check Result
-
-```bash
-curl -k https://127.0.0.1:8080/status
-```
-
-```bash
-cat ecus/gateway/version.json
-cat ecus/bcm/version.json
-cat ecus/cluster/version.json
-```
-
-## 14. Restart Mender If Needed
+If a deployment stays `Queued to start`, refresh the client services and check the last log lines.
 
 ```bash
 sudo systemctl restart mender-authd mender-updated
+
+journalctl -u mender-authd -n 30 --no-pager
+journalctl -u mender-updated -n 30 --no-pager
 ```
+
+If the device was registered on a different machine or with stale auth state, decommission the
+old device in Hosted Mender and keep only the current one.
+
+## Latest Updates
+
+- Mender uses **host Python TCU only**
+- Docker TCU is **not used** for Mender deployments
+- Prepared scenario state is preserved into the Mender payload
+- `active_ecus` and `optional_targets` are supported
+- The host path vs `/app` path mismatch in the scenario validator is fixed
+- `OTA_PROJECT_ROOT` must be exported for both shell sessions and systemd services
+- The recommended Mender registration path is `get.mender.io` plus `mender-setup`
+

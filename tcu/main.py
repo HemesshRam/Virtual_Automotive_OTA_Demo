@@ -156,6 +156,56 @@ def _validate_active_scenario_consistency():
     if not active:
         return True
 
+    def _normalize_scenario_path(value: str) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+
+        candidate = text.replace("\\", "/")
+        try:
+            absolute_candidate = os.path.abspath(text).replace("\\", "/")
+        except OSError:
+            absolute_candidate = candidate
+
+        project_root = os.getenv("OTA_PROJECT_ROOT", "").strip()
+        known_roots = []
+        if project_root:
+            known_roots.append(project_root.replace("\\", "/").rstrip("/"))
+        known_roots.append("/app")
+
+        for root in known_roots:
+            if not root:
+                continue
+            prefix = f"{root}/"
+            if candidate == root:
+                return ""
+            if candidate.startswith(prefix):
+                return candidate[len(prefix):]
+            if absolute_candidate == root:
+                return ""
+            if absolute_candidate.startswith(prefix):
+                return absolute_candidate[len(prefix):]
+
+        def _repo_relative_suffix(path_text: str) -> str:
+            parts = [part for part in path_text.split("/") if part]
+            anchors = {
+                "runtime",
+                "vehicle",
+                "campaigns",
+                "docker",
+                "scenarios",
+                "firmware",
+                "logs",
+            }
+            for index, part in enumerate(parts):
+                if part in anchors:
+                    return "/".join(parts[index:])
+            return path_text
+
+        if "/" in candidate:
+            return _repo_relative_suffix(candidate)
+        return _repo_relative_suffix(absolute_candidate)
+
     expected = {
         "OTA_SCENARIO_NAME": active.get("scenario_name", ""),
         "OTA_CAMPAIGN_FILE": active.get("campaign_file", ""),
@@ -170,7 +220,12 @@ def _validate_active_scenario_consistency():
     for key, expected_value in expected.items():
         expected_text = str(expected_value or "").strip()
         actual_text = os.getenv(key, "").strip()
-        if expected_text and actual_text and actual_text != expected_text:
+        if (
+            expected_text
+            and actual_text
+            and _normalize_scenario_path(actual_text)
+            != _normalize_scenario_path(expected_text)
+        ):
             mismatches.append((key, expected_text, actual_text))
 
     if not mismatches:

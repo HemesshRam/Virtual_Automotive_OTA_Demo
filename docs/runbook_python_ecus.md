@@ -1,5 +1,15 @@
 # Python ECU Runbook
 
+This runbook is for:
+
+- Python ECUs
+- Non-Mender TCU
+- Host Python TCU or Docker TCU
+
+For direct manual execution without `democtl run`, use:
+
+- [manual_execution_runbook.md](manual_execution_runbook.md)
+
 ## 1. Bootstrap
 
 ```bash
@@ -19,6 +29,36 @@ bash scripts/preflight_ubuntu.sh --runtime python --tcu non-mender --transport b
 
 ## 3. Zero-Touch Run
 
+Host Python TCU, default topology, Cluster offline:
+
+```bash
+python3 -m democtl run \
+  --transport vcan \
+  --topology default \
+  --dependency topology-default \
+  --offline cluster \
+  --runtime python \
+  --tcu-runtime python \
+  --ecu-state keep-current \
+  --ensure-vcan \
+  --restart-runtime
+```
+
+Docker TCU, default topology, all ECUs online:
+
+```bash
+python3 -m democtl run \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime python \
+  --tcu-runtime docker \
+  --ecu-state fresh \
+  --ensure-vcan \
+  --restart-runtime
+```
+
 Default topology, Cluster offline:
 
 ```bash
@@ -28,6 +68,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline cluster \
   --runtime python \
+  --tcu-runtime python \
   --ecu-state keep-current \
   --ensure-vcan \
   --restart-runtime
@@ -42,6 +83,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline none \
   --runtime python \
+  --tcu-runtime python \
   --ecu-state fresh \
   --ensure-vcan \
   --restart-runtime
@@ -56,6 +98,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline cluster \
   --runtime python \
+  --tcu-runtime python \
   --ecu-state keep-current \
   --ensure-vcan \
   --restart-runtime
@@ -70,6 +113,7 @@ python3 -m democtl run \
   --dependency bcm-gateway-cluster \
   --offline none \
   --runtime python \
+  --tcu-runtime python \
   --ecu-state fresh \
   --ensure-vcan \
   --restart-runtime
@@ -84,6 +128,7 @@ python3 -m democtl run \
   --dependency cluster-gateway \
   --offline none \
   --runtime python \
+  --tcu-runtime python \
   --ecu-state fresh \
   --ensure-vcan \
   --restart-runtime
@@ -234,6 +279,41 @@ python3 -m democtl teardown
 ## 8. Manual Fallback
 
 Prepare only:
+
+```bash
+python3 scripts/prepare_ota_scenario.py \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime python \
+  --tcu-runtime python \
+  --ecu-state fresh
+```
+
+Run host Python TCU:
+
+```bash
+source runtime/scenarios/active_tcu_env.sh
+python3 -m tcu.main
+```
+
+Run Docker TCU:
+
+```bash
+python3 scripts/prepare_ota_scenario.py \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime python \
+  --tcu-runtime docker \
+  --ecu-state fresh
+```
+
+```bash
+bash scripts/start_demo.sh --run-tcu
+```
 
 ```bash
 python3 scripts/prepare_ota_scenario.py \

@@ -7,7 +7,7 @@ campaign proceeds.
 
 Use:
 
-- [campaigns/campaign_partial_skip_cluster.json](/home/ubuntu-ota/virtual-automotive-ota/campaigns/campaign_partial_skip_cluster.json)
+- [campaigns/campaign_partial_skip_cluster.json](../campaigns/campaign_partial_skip_cluster.json)
 
 Behavior:
 

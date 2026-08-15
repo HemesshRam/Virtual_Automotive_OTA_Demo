@@ -9,8 +9,8 @@ PROJECT_ROOT="${OTA_PROJECT_ROOT:-}"
 if [[ -z "${PROJECT_ROOT}" ]]; then
     if [[ -f "${PWD}/integrations/mender/run_tcu_from_mender.py" ]]; then
         PROJECT_ROOT="${PWD}"
-    elif [[ -f "${HOME}/virtual-automotive-ota/integrations/mender/run_tcu_from_mender.py" ]]; then
-        PROJECT_ROOT="${HOME}/virtual-automotive-ota"
+    elif [[ -f "${HOME}/Virtual_Automotive_OTA_Demo/integrations/mender/run_tcu_from_mender.py" ]]; then
+        PROJECT_ROOT="${HOME}/Virtual_Automotive_OTA_Demo"
     else
         echo "tcu-ota-module: unable to locate project root; set OTA_PROJECT_ROOT" >&2
         exit 1

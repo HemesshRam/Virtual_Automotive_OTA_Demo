@@ -137,14 +137,14 @@ sudo install -D -m 0755 \
 Set the repository path for installed Mender scripts:
 
 ```bash
-echo 'export OTA_PROJECT_ROOT=/home/ubuntu-ota/virtual-automotive-ota' | sudo tee /etc/profile.d/virtual-ota-mender.sh
+echo 'export OTA_PROJECT_ROOT=/home/ubuntu-ota/Virtual_Automotive_OTA_Demo' | sudo tee /etc/profile.d/virtual-ota-mender.sh
 sudo chmod 0644 /etc/profile.d/virtual-ota-mender.sh
 ```
 
 For the current shell session, export it explicitly before testing:
 
 ```bash
-export OTA_PROJECT_ROOT=/home/ubuntu-ota/virtual-automotive-ota
+export OTA_PROJECT_ROOT=/home/ubuntu-ota/Virtual_Automotive_OTA_Demo
 ```
 
 ## How The Flow Works

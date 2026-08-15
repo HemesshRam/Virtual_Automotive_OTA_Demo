@@ -1,5 +1,15 @@
 # Docker ECU Runbook
 
+This runbook is for:
+
+- Docker ECUs
+- Non-Mender TCU
+- Host Python TCU or Docker TCU
+
+For direct manual execution without `democtl run`, use:
+
+- [manual_execution_runbook.md](manual_execution_runbook.md)
+
 ## 1. Bootstrap
 
 ```bash
@@ -27,6 +37,36 @@ bash scripts/start_demo.sh
 
 ## 4. Zero-Touch TCU Run
 
+Host Python TCU, default topology, all ECUs online:
+
+```bash
+python3 -m democtl run \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime docker \
+  --tcu-runtime python \
+  --ecu-state fresh \
+  --ensure-vcan \
+  --restart-runtime
+```
+
+Docker TCU, default topology, all ECUs online:
+
+```bash
+python3 -m democtl run \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime docker \
+  --tcu-runtime docker \
+  --ecu-state fresh \
+  --ensure-vcan \
+  --restart-runtime
+```
+
 Default topology, all ECUs online:
 
 ```bash
@@ -36,6 +76,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline none \
   --runtime docker \
+  --tcu-runtime python \
   --ecu-state fresh \
   --ensure-vcan \
   --restart-runtime
@@ -50,6 +91,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline cluster \
   --runtime docker \
+  --tcu-runtime python \
   --ecu-state keep-current \
   --ensure-vcan \
   --restart-runtime
@@ -64,6 +106,7 @@ python3 -m democtl run \
   --dependency topology-default \
   --offline cluster \
   --runtime docker \
+  --tcu-runtime python \
   --ecu-state keep-current \
   --ensure-vcan \
   --restart-runtime
@@ -78,6 +121,7 @@ python3 -m democtl run \
   --dependency bcm-gateway-cluster \
   --offline none \
   --runtime docker \
+  --tcu-runtime python \
   --ecu-state fresh \
   --ensure-vcan \
   --restart-runtime
@@ -208,6 +252,7 @@ python3 scripts/prepare_ota_scenario.py \
   --dependency topology-default \
   --offline none \
   --runtime docker \
+  --tcu-runtime python \
   --ecu-state fresh
 ```
 
@@ -224,4 +269,21 @@ source runtime/scenarios/active_tcu_env.sh
 export OTA_TRANSPORT=doip
 export OTA_CLOUD_CONTROL=mqtt
 python3 -m tcu.main
+```
+
+Docker TCU fallback:
+
+```bash
+python3 scripts/prepare_ota_scenario.py \
+  --transport doip \
+  --topology default \
+  --dependency topology-default \
+  --offline none \
+  --runtime docker \
+  --tcu-runtime docker \
+  --ecu-state fresh
+```
+
+```bash
+bash scripts/start_demo.sh --run-tcu
 ```

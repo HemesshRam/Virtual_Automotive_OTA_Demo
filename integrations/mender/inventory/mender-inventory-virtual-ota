@@ -14,7 +14,7 @@ def resolve_project_root() -> Path:
 
     cwd = Path.cwd().resolve()
     candidates.extend([cwd] + list(cwd.parents))
-    home_repo = Path.home() / "virtual-automotive-ota"
+    home_repo = Path.home() / "Virtual_Automotive_OTA_Demo"
     candidates.append(home_repo.resolve())
 
     for candidate in candidates:
@@ -25,7 +25,7 @@ def resolve_project_root() -> Path:
 
     raise RuntimeError(
         "Unable to locate project root. Set OTA_PROJECT_ROOT to the "
-        "virtual-automotive-ota repository path."
+        "Virtual_Automotive_OTA_Demo repository path."
     )
 
 
